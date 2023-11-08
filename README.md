@@ -10,20 +10,25 @@ There are 2 halves to CoinStir that work together in order to achieve this:
 The Sapphire paratime is a privacy enabled blockchain with all computation and private contract state managed within a TEE (Trusted Execution Environment) which ensures state cannot be queried by anyone not explicitly permissioned to view the relevant information. By extracting the contract's state and maintaining it off of the public ledger, privacy can be granted while still allowing many of the other benefits found on the Ethereum Network.
 
 
-Logic Flow.
+Logic Flow:
+
 Funds are deposited into the Host contract triggering a message to the Enclave contract including details of the transaction (amount and sender). The user then approves other wallets to spend the funds it deposited, however this step occurs in private via Sapphire which means the approved wallets are able to initiate txn's without anyone knowing what wallet it is tied to. The user then connects with these approved wallets and is able to send funds freely without concern if the recipiant will be able to track their account activity on the original wallet. 
 
 Deposits:
+
 A deposit is made on Ethereum triggering a message to be passed from the Host contract to the Enclave contract via Celr's IM bridge.
 The Enclave contract receives this message and logs details of the txn. TXN's are stored as structs mapped to a number to organize them. The struct stores the blocknumber, recipiant, sender, amount, fee and the users available balance for all transactions. The number of the struct is attached to the connected wallet for quearying later.
 
 Transactions:
+
 A user creates a message that is passed to a relayer on Sapphire. This allows the user to enjoy the benefits of the Sapphire paratime while preventing them from needing the Sapphire gas token, $ROSE. The message includes the value, destination and a signature, and is passed by the relayer to the Enclave contract which sends a message to the Host contract dictating where to send funds. The state is then updated only in the Enclave. On ETH, the user is charged both a fee as a percent of the amount transferred, as well as the gas spent by the relayer on Sapphire.
 
 Withdraws:
+
 A user may initiate a withdraw in the same way a transaction is initiated, however the recipiant is themself. Gas is still charged to the user, but no fee is.
 
 Oversight:
+
 In an effort to prevent money laundering, there is the ability for oversight organizations to be granted access to review all history for any wallet. This grants the ability to "look behind the curtain" of the app to permissioned users such as governments or other regulatory agencies.
 
 
