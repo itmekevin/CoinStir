@@ -1,8 +1,5 @@
 # CoinStir
-
-CoinStir: Explained.
-
-Overview.
+Overview:
 
 CoinStir is a privacy enabling app that allows users to send ETH or ERC20 tokens to other wallets without recipiants being able to see who specifically sent the funds. Additionally CoinStir allows for a 'web' of wallets to be created and managed from one dashboard to assist in managing personal or business finances across multiple wallets. Financial privacy is instrumental in a multide of business and personal relationships, and while the open nature of the blockchain is often superior, there are instances in which privacy remains critical.
 
