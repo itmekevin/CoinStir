@@ -1,4 +1,3 @@
-The Host Contract
 The Host Contract is very simple. There are only 2 functions and the Constructor:
 
   1) Constructor
@@ -13,7 +12,6 @@ The Host Contract is very simple. There are only 2 functions and the Constructor
 
 
 
-The Enclave Contract
 The Enclave Contract is much more robust than the Host Contract, and includes the following functions:
 
   1) 'createMetaTxnAddr'
