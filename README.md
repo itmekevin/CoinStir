@@ -12,12 +12,12 @@ The Sapphire paratime is a privacy enabled blockchain with all computation and p
 
 Logic Flow:
 
-Funds are deposited into the Host contract, which triggers a message to the Enclave contract including details of the transaction (amount and sender). The user can then interact with the relayer provided by the front end to create meta-txns that get submitted by the relayer, keeping the wallet that initiated the txn private. Additionally, users can approve additional wallets to both distribute and receive ETH on behalf of the original wallet. This allows for unique organizational structures of wallets, as well as the ability to privately receive funds all on the same dashboard.
+Funds are deposited into the Host contract by the user, which triggers a message to the Enclave contract including details of the transaction. The user can then interact with the relayer provided by the front end to create meta-txns that get submitted by the relayer, keeping the wallet that initiated the txn private. Additionally, users can approve additional wallets to both distribute and receive ETH on behalf of the original wallet. This allows for unique organizational structures of wallets, as well as the ability to privately receive funds all on the same dashboard.
 
 Deposits:
 
-When a deposit is made on Ethereum, a message is triggered to be passed from the Host contract to the Enclave contract via Celer's IM bridge.
-The Enclave contract receives this message and logs details of the txn. TXN's are stored as structs mapped to a number and initiating wallet for quearying later. The struct stores the blocknumber, recipiant, sender, amount, fee and the users available balance for all transactions.
+When a user creates a deposit on Ethereum, a message is triggered to be passed from the Host contract to the Enclave contract via Celer's IM bridge inclucding the amount and sender of the txn.
+The Enclave contract receives this message and logs details of the txn, as well as updates the total account balance. TXN's are stored as structs mapped to a number and their initiating wallet for referencing later. The struct stores the blocknumber, recipiant, sender, amount, fee and the users available balance for all transactions.
 
 Transactions:
 
@@ -30,5 +30,4 @@ A user may initiate a withdraw in the same way a transaction is initiated, howev
 Oversight:
 
 In an effort to prevent money laundering, there is the ability for oversight organizations to be granted access to review all history for any wallet. This grants the ability to "look behind the curtain" of the app for permissioned users such as governments or other regulatory agencies.
-
 
