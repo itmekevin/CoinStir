@@ -93,7 +93,8 @@ contract VerifyTypedData {
 * @return users address.
 * @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
 * When a user signs a 'sign-in' message on the front end, they are providing CoinStir the necessary data to pull sensitive information for that specific users account. This is how the users txn history
-* is able to be referenced.
+* is able to be referenced. The only way for data of a specific account to be referenced by an account other than itself is via specific approval by CoinStir, reserved for regulatory and government agencies
+* for compliance purposes.
 */
 
     function getSigner(string memory note, bytes memory _signature)
