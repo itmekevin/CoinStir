@@ -7,8 +7,8 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 /**
 * @title CoinStirHost
-* @dev CoinStirHost acts as the Ethereum half of a larger application used to obfuscate txn history and user account balance from the public eye.
-* The other half exsits on the Oasis Network's Sapphire Paratime which enables custom visibility settings on sensitive data.
+* @dev CoinStirHost acts as the asset transacting half of a larger application used to obfuscate txn history and user account balance from the public eye.
+* This half of the application exists on Ethereum, while the other half exsits on the Oasis Network's Sapphire Paratime which enables custom visibility settings on sensitive data.
 * The Ethereum component and the Sapphire component communicate via the Celer IM Bridge.
 */
 
