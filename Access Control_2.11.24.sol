@@ -30,8 +30,8 @@ contract accessControl {
     mapping(address => bool) public relayerStatus;
 
 /**
-* @notice only an Admin can grant relayer status, providing strict controls and preventing abuse.
-* @dev specifics of relayer are detailed in above notes. Care should be taken when granting relayerStatus to ensure the address is functional, keys are protected, and relayer is properly funded.
+* @notice only an Admin can grant relayerStatus, providing strict controls and preventing abuse.
+* @dev specifics of relayerStatus are detailed in above notes. Care should be taken when granting relayerStatus to ensure the address is functional, keys are protected, and relayer is properly funded.
 * @param accepts any address.
 */
     function grantRelayer(address _relayer) public onlyAdmin {
