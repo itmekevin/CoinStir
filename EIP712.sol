@@ -4,7 +4,23 @@ pragma solidity 0.8.22;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
+/**
+* @title VerifyTypedData
+* @dev a utility contract for CoinStir leveraging EIP712 to allow for proper signature and account verification logic.
+*/
+
 contract VerifyTypedData {
+
+/**
+* @notice txnSigner is for txn related logic only.
+* @param recipiant is the destination address of the txn.
+* @param value is the Ether amount of the txn.
+* @param _signature is generated via EIP712 logic on the front end.
+* @notice the recipiant and value params are used in the signature creation on the front end, and here are used to decipher the signers wallet address.
+* @return users address.
+* @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
+* When a user signs a txn they are creating a meta-txn which CoinStir enacts.
+*/
 
     function txnSigner(address recipiant, string memory value, bytes memory _signature)
         public
@@ -69,9 +85,16 @@ contract VerifyTypedData {
     }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ // \\// \\ ///
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**
+* @notice getSigner is for 'sign-in' related logic only.
+* @param note is the message presented to users on the front end when the signature request is made.
+* @param _signature is generated via EIP712 logic on the front end upon signing of the previously mentioned note.
+* @notice the note and _signature param are used in the signature creation on the front end, and here are used to decipher the signers wallet address.
+* @return users address.
+* @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
+* When a user signs a 'sign-in' message on the front end, they are providing CoinStir the necessary data to pull sensitive information for that specific users account. This is how the users txn history
+* is able to be referenced.
+*/
 
     function getSigner(string memory note, bytes memory _signature)
         public
