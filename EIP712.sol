@@ -89,7 +89,7 @@ contract VerifyTypedData {
 * @notice getSigner is for 'sign-in' related logic only.
 * @param note is the message presented to users on the front end when the signature request is made.
 * @param _signature is generated via EIP712 logic on the front end upon signing of the previously mentioned note.
-* @notice the note and _signature param are used in the signature creation on the front end, and here are used to decipher the signers wallet address.
+* @notice the note and _signature param are used gathered in the front end, and here are used to decipher the signers wallet address.
 * @return users address.
 * @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
 * When a user signs a 'sign-in' message on the front end, they are providing CoinStir the necessary data to pull sensitive information for that specific users account. This is how the users txn history
