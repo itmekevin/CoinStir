@@ -184,7 +184,6 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-// ACCEPTS INFO FROM RELAYER TO APPROVE THE ADDRESS DICTATED BY USER
     function approveAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
         (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
         address sender = txnSigner(_walletB, value, signature);
@@ -215,7 +214,6 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-// ACCEPTS INFO FROM RELAYER TO REVOKE THE ADDRESS DICTATED BY USER
     function revokeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
         (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
         address sender = txnSigner(_walletB, value, signature);
@@ -246,7 +244,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
     }
 
 ////////////////////////////////////////////////// - TRANSACTIONAL - //////////////////////////////////////////////////
-
+/**
 * @dev creates a meta-txn in the correct format for a txn to be created and executed by the relayer.
 * @param _metaTxn includes the payload, destination and signature data necessary to execute the txn.
 * @return data in the proper format for the relayer to initate a txn per specs issued by the user.
@@ -308,7 +306,6 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice the sending wallet is checked for its originAddress, if there is none, its originAddress is set as itself. If one already exists, the txn is credited against its originAddress.
 * @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-// TRACKS DEPOSITS TO THE HOST CONTRACT, INITIATED BY THE MESSAGE BRIDGE.
     function _trackDeposit(bytes calldata _args) internal returns (Result) {
         (address sender, uint256 payload) = abi.decode(_args, (address, uint256));
         if (originAddress[sender] == address(0)) {
