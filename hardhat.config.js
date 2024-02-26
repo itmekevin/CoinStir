@@ -1,3 +1,11 @@
+/*
+DEPLOYMENT INSTRUCTIONS:
+
+1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
+2) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network goerli
+3) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network goerli --enclaveaddr <insert the enclave address here>
+*/
+
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
@@ -6,7 +14,7 @@ const { ethers } = require("ethers");
 
 const oasis_API_KEY = "https://testnet.sapphire.oasis.dev";
 const INFURA_API_KEY = "https://goerli.infura.io/v3/c893b23e8bb14c85899887b76b2bd363";
-const WALLET_KEY = "fb55ff6133a9674e59e3de02bce7fb3d810c700ff30fbafd035b93af45f4434f";
+const WALLET_KEY = "INSERT YOUR WALLET PRIVATE KEY HERE";
 
 
 module.exports = {
