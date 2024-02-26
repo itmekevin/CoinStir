@@ -6,7 +6,7 @@ import {Enclave, Result, autoswitch} from "@oasisprotocol/sapphire-contracts/con
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "contracts/accessControl.sol";
-import "contracts/EIP712Signer.sol";
+import "contracts/VerifyTypedData.sol";
 
 /**
 * @title coinStirEnclave
