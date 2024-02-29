@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.22;
+pragma solidity 0.8.24;
 
 import {Enclave, Result, autoswitch} from "@oasisprotocol/sapphire-contracts/contracts/OPL.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import "contracts/accessControl.sol";
-import "contracts/VerifyTypedData.sol";
+import "./accessControl.sol";
+import "./VerifyTypedData.sol";
 
 /**
 * @title coinStirEnclave
@@ -16,7 +16,7 @@ import "contracts/VerifyTypedData.sol";
 * As detailed below, much of the txn data stored in the Enclave is only visible to the users that initated those txns.
 * Additionally, permissions have been built in for regulatory agencies to maintain oversight of activity within CoinStir in congruence with various anti-money laundering policies.
 */
-contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
+contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev explicitly sets the starting balance of the entire contract to zero.
@@ -141,6 +141,8 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     mapping (address => bool) public blockedList; 
 
+    mapping (address => address) private proposedOG;
+
 /**
 * @dev sets the address for the Host side of CoinStir, ensures correct chain, sets an endpoint, and assigns critical permissions and supporting addresses. 
 * @param stirHost only messages received from the entered address will be acted upon by this contract.
@@ -154,7 +156,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
     constructor(address stirHost) Enclave(stirHost, autoswitch("ethereum")) {
         registerEndpoint("trackDeposit", _trackDeposit);
         coinStir = stirHost;
-        adminStatus[0x0D78a2d04B925f50Ee233735b60C862357492D2d] = true; // UPDATE
+        adminStatus[msg.sender] = true; // UPDATE
         relayerStatus[0xF30CcB655090a190178D75bdFC8203eb826Ab066] = true; // UPDATE
         feeWallet = 0x0D78a2d04B925f50Ee233735b60C862357492D2d; // UPDATE
         gasWallet = 0xF30CcB655090a190178D75bdFC8203eb826Ab066; //UPDATE
@@ -175,6 +177,19 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
         ));
     }
 
+    function proposeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
+        (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
+        address sender = txnSigner(_walletB, value, signature);
+            require (sender == originAddress[sender], "must use origin address");
+            require (userBalance[sender] > gasPrice, "insufficient balance");
+                if (originAddress[_walletB] == address(0)) {
+                    proposedOG[_walletB] = sender;
+                } else {
+                    revert();
+                }
+                return (Result.Success);
+    }
+
 /**
 * @dev accepts info from the relayer to approve the address dictated by a user in the above meta-txn
 * @param signedMsg is the return data from 'createMetaTxnAddr'
@@ -184,23 +199,23 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-    function approveAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
-        (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
-        address sender = txnSigner(_walletB, value, signature);
-                require (sender == originAddress[sender], "must use origin address");
-                require (userBalance[sender] > gasPrice, "insufficient balance");
-                    userBalance[sender] -= gasPrice;
-                    approvedAddress[sender].push(_walletB);
-                    originAddress[_walletB] = sender;
+    function confirmApproval(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
+        (address OG, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
+        address sender = txnSigner(OG, value, signature);
+                require (proposedOG[sender] == OG, "input addr did not initiate approval");
+                require (userBalance[OG] > gasPrice, "insufficient balance");
+                    userBalance[OG] -= gasPrice;
+                    approvedAddress[OG].push(sender);
+                    originAddress[sender] = OG;
                     txnNumber ++;
                         TXN storage t = TXNno[txnNumber];
                         t.blocknum = block.number;
-                        t.recipiant = _walletB;
-                        t.sendingWallet = sender;
+                        t.recipiant = sender;
+                        t.sendingWallet = OG;
                         t.amount = 0;
                         t.fee = 0;
-                        t.availBal = userBalance[sender];
-                    origintxns[sender].push(txnNumber);
+                        t.availBal = userBalance[OG];
+                    origintxns[OG].push(txnNumber);
                     reclaimGas += gasPrice;
                     return (Result.Success);
     }
@@ -260,7 +275,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 /**
 * @dev accepts info from the relayer to initiate a txn on behalf of the user.
 * @param signedMsg is the return data from 'createMetaTxnAddr'
-* @param value is the value in Ether of the txn.
+* @param val is the value in Ether of the txn.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
 * @param feeRate is the amount charged by CoinStir for the services provided.
 * @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee + the fee rate) for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
@@ -272,7 +287,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
             require(recipiant != address(this), "invalid recipiant");
             address sender = txnSigner(recipiant, val, signature);
             if (blockedList[sender] == true && recipiant != sender) {
-                return (Result.PermanentFailure);
+                revert();
             } else {
                 address _originAddr = originAddress[sender];
                 uint256 fee = ((payload/1000)*feeRate);
@@ -382,7 +397,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev gets balance of a wallets originAddress
-* @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
+* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @notice the originAddress balance is available to all accounts in the 'web' of approved accounts, any funds deposited by any account in the web updates this value.
 * @return account balance of the users originAddress.
@@ -396,7 +411,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev gets a users originAddress from their signature.
-* @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
+* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @return originAddress for a users current wallet.
 */
@@ -417,7 +432,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev gets a specific approved wallet for a users originAddress in a specific index slot.
-* @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
+* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param index is the slot number in the array of wallets to be returned.
 * @return wallet address in the specific slot number of approved wallets for the originAddress.
@@ -431,7 +446,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev retrieves the TXN data for a specific range of TXNs for a specific user for an authorized user only.
-* @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own. In this case, proving the account has authStatus.
+* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own. In this case, proving the account has authStatus.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param start is the starting point of users txn lookup.
 * @param stop is the stopping point of users txn lookup.
@@ -453,7 +468,7 @@ contract coinStirEnclave is Enclave, accessControl, VerifyTypedData {
 
 /**
 * @dev retrieves the number of txns a specific account has made for an authorized user only.
-* @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own. In this case, proving the account has authStatus.
+* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own. In this case, proving the account has authStatus.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param _addr is the specific address being referenced
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
