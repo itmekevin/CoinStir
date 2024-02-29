@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.22;
+pragma solidity 0.8.24;
 
 import {Host, Result} from "@oasisprotocol/sapphire-contracts/contracts/OPL.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
