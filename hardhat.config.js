@@ -8,13 +8,15 @@ DEPLOYMENT INSTRUCTIONS:
 
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-toolbox/network-helpers");
+require("solidity-coverage");
 
 const { HardhatUserConfig, task } = require('hardhat/config');
 const { ethers } = require("ethers");
 
 const oasis_API_KEY = "https://testnet.sapphire.oasis.dev";
 const INFURA_API_KEY = "https://goerli.infura.io/v3/c893b23e8bb14c85899887b76b2bd363";
-const WALLET_KEY = "INSERT YOUR WALLET PRIVATE KEY HERE";
+const WALLET_KEY = "fb55ff6133a9674e59e3de02bce7fb3d810c700ff30fbafd035b93af45f4434f";
+const adminKey = "7b39d312e9335eb3bfe7bf570e2d7b352da33bc85e5ee971f773421b9b417f08";
 
 
 module.exports = {
@@ -22,12 +24,12 @@ module.exports = {
   networks: {
     oasistest: {
       url: oasis_API_KEY,
-      accounts: [WALLET_KEY],
+      accounts: [WALLET_KEY, adminKey],
       chainId: 23295,
     },
     goerli: {
       url: INFURA_API_KEY,
-      accounts: [WALLET_KEY],
+      accounts: [WALLET_KEY, adminKey],
       chainId: 5,
     }
   }
@@ -68,7 +70,6 @@ task("deploy-enclave", "calculates host address and deploys enclave")
     return nextHostAddr;
     }
 
-        console.log("this is the next Host address: " + nextHostAddr);
     const enclave = await StirEnclave.deploy(nextHostAddr);
     await enclave.waitForDeployment();
     const thisAddr = await enclave.getAddress();
@@ -91,4 +92,5 @@ task("deploy-host", "launches host address, requires enclave deployed address")
         const thisAddr = await host.getAddress();
             console.log('StirHost deployed to address: ' + thisAddr);
 });
+
 
