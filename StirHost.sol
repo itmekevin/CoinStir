@@ -12,7 +12,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 * The Ethereum component and the Sapphire component communicate via the Celer IM Bridge.
 */
 
-contract CoinStirHost is Host {
+contract StirHost is Host {
 
 /**
 * @dev sets the Enclave address for the sapphire component of the application. This ensures only messages received from this specific address are acted upon, increasing security.
