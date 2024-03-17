@@ -1070,6 +1070,32 @@ describe("SetDepositGasPrice", function() {
   }); 
 });
 
+describe("SetCelerFeeETH", function() {
+  it("Should update the celer fee for eth", async function () {
+    const _num = ".00069";
+      const num = {value: ethers.parseEther(_num)};
+      const numvalue = num.value;
+      const numString = numvalue.toString();
+      console.log(numString);
+    await enclave.connect(admin).setCelerFeeETH(numString);
+    expect(await enclave.celerFeeETH()).to.equal(numString);
+    await expect (enclave.connect(user).setCelerFeeETH(numString)).to.be.reverted;
+  }); 
+});
+
+describe("SetCelerFeeROSE", function() {
+  it("Should update the celer fee for rose", async function () {
+    const _num = ".00069";
+      const num = {value: ethers.parseEther(_num)};
+      const numvalue = num.value;
+      const numString = numvalue.toString();
+      console.log(numString);
+    await enclave.connect(admin).setCelerFeeROSE(numString);
+    expect(await enclave.celerFeeROSE()).to.equal(numString);
+    await expect (enclave.connect(user).setCelerFeeROSE(numString)).to.be.reverted;
+  }); 
+});
+
 describe("claimGas", function() {
   it("Should claim gas fees earned", async function () {
     const tx = await enclave.connect(admin).claimGas(0);
