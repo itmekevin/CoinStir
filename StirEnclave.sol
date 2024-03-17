@@ -280,24 +280,21 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @param feeRate is the amount charged by CoinStir for the services provided.
 * @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee + the fee rate) for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @notice if the sending wallet is on the blocked list AND they are attempting to send funds to a different wallet, an error will throw. Users can always withdraw their own funds, but may be prevented from creating txns.
-* @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-    function _trackTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate) external onlyRelayer returns (Result) {
+    function _trackTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate) external payable onlyRelayer {
         (uint256 payload, address recipiant, bytes memory signature) = abi.decode(signedMsg, (uint256, address, bytes));
-            require(recipiant != address(this), "invalid recipiant");
             address sender = txnSigner(recipiant, val, signature);
             if (blockedList[sender] == true && recipiant != sender) {
-                revert();
+                revert("blocked sender");
             } else {
                 address _originAddr = originAddress[sender];
-                uint256 fee = ((payload/1000)*feeRate);
+                uint256 fee = ((payload*feeRate)/1000);
                     if (recipiant == _originAddr) {
                         fee = 0;
                     }
                     feeClaim += fee;
-                uint256 adjustedPayload = (payload + fee + gasPrice);
+                uint256 adjustedPayload = (payload + fee + gasPrice + celerFeeROSE);
                 require(userBalance[_originAddr] >= adjustedPayload, "insufficient funds");
-                require(contractBalance >= adjustedPayload, "insufficient contract balance"); 
                     userBalance[_originAddr] -= adjustedPayload;
                     txnNumber ++;
                         TXN storage t = TXNno[txnNumber];
@@ -311,7 +308,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
                     contractBalance -= payload;
                     postMessage("executeTxn", abi.encode(recipiant, payload));
                     reclaimGas += gasPrice;
-                return (Result.Success);
             }
     }
 
@@ -493,10 +489,12 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 /**
 * @dev allows an admin to send the accrued gas fees to the specified wallet.
 * @notice the gas fees accrued are reset to zero.
+* @notice in the event sapphire adds a celer message fee, the value of the message passed to this function must be at least the value of any such fee. Currently the fee is zero.
 */
-    function claimGas() external onlyAdmin {
-        postMessage("executeTxn", abi.encode(gasWallet, reclaimGas));
+    function claimGas() external payable onlyAdmin {
+        require (msg.value >= celerFeeROSE);
         reclaimGas = 0;
+        postMessage("executeTxn", abi.encode(gasWallet, reclaimGas));
     }
 
 /**
@@ -509,10 +507,12 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 /**
 * @dev allows an admin to send the accrued service fees to the specified wallet.
 * @notice the service fees accrued are reset to zero.
+* @notice in the event sapphire adds a celer message fee, the value of the message passed to this function must be at least the value of any such fee. Currently the fee is zero.
 */
-    function claimFee() external onlyAdmin {
-        postMessage("executeTxn", abi.encode(feeWallet, feeClaim));
+    function claimFee() external payable onlyAdmin {
+        require (msg.value >= celerFeeROSE);
         feeClaim = 0;
+        postMessage("executeTxn", abi.encode(feeWallet, feeClaim));
     }
 
 /**
