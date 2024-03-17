@@ -26,13 +26,12 @@ contract StirHost is Host {
 * @dev accepts a deposit of any amount and tracks the details in the Enclave contract
 * @notice funds stay in this contract, while both the sender and the message value are sent via Celer IM Bridge to the Enclave, where the details of the txn are stored.
 * @notice no state is kept in this contract, only the assets. All contract state is stored in the Enclave on Sapphire for privacy.
-* @return success upon proper execution.
 */
-    function deposit() external payable returns (Result) {
+    function deposit() external payable {
         address sender = msg.sender;
         uint256 payload = msg.value;
+        require (payload >= minAmount, "insufficient value");
         postMessage("trackDeposit", abi.encode(sender, payload));
-        return Result.Success;
     }
 
 /**
