@@ -40,14 +40,10 @@ contract StirHost is Host {
 * @notice funds are sent but no state is updated in this contract.
 * @return success upon proper execution.
 */
-function _executeTxn(bytes calldata _args) internal returns (Result) {
-    (address recipient, uint256 payload) = abi.decode(_args, (address, uint256));
-    bool success = payable(recipient).call{value: payload}("");
-    if (success) {
+    function _executeTxn(bytes calldata _args) internal returns (Result) {
+        (address recipiant, uint256 payload) = abi.decode(_args, (address, uint256));
+        payable(recipiant).transfer(payload);
         return Result.Success;
-    } else {
-        return Result.Fail;
     }
-}
 
 }
