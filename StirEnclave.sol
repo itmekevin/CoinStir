@@ -187,17 +187,26 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
         ));
     }
 
-    function proposeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
+/** @dev allows for an existing user to propose granting of access of the users funds to a new address. The proposed address must subsequently confirm this approval. This 2 step process is required as once a wallet has been
+* approved by another, any funds deposited by that wallet are accessible to the wallet that approved it.
+* @param signedMsg is the return data from 'createMetaTxnAddr'
+* @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
+* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @notice the proposing address must be an origin address
+* @notice the initiating address must have enough funds to cover the gas cost of this txn
+* @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
+*/
+    function proposeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
         (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
         address sender = txnSigner(_walletB, value, signature);
             require (sender == originAddress[sender], "must use origin address");
-            require (userBalance[sender] > gasPrice, "insufficient balance");
+            require (userBalance[sender] >= gasPrice, "insufficient balance");
                 if (originAddress[_walletB] == address(0)) {
-                    proposedOG[_walletB] = sender;
+                    userBalance[sender] -= gasPrice;
+                    proposedOrigin[_walletB] = sender;
                 } else {
-                    revert();
+                    revert("propose a different address");
                 }
-                return (Result.Success);
     }
 
 /**
