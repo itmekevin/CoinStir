@@ -723,11 +723,12 @@ describe("approveAddress", function() {
       console.log("dataFinal: " + _dataFinal);
   var metatxnFinal = await enclave.connect(approvedAddressSign).createMetaTxnAddr(_dataFinal);
   console.log("metaFinal: " + metatxnFinal);
+  await expect (enclave.connect(user).confirmApproval(metatxnFinal, approvalString, 2000000000000000)).to.be.reverted;
+  await expect(enclave.connect(relayer).confirmApproval(metatxnFinal, approvalString, "20000000000000000000")).to.be.revertedWith("insufficient balance");
   const actualtxnFinal = await enclave.connect(relayer).confirmApproval(metatxnFinal, approvalString, 2000000000000000);
   expect(actualtxnFinal).to.exist;
-  await expect (enclave.connect(user).confirmApproval(metatxnFinal, approvalString, 2000000000000000)).to.be.reverted;
-  await expect(enclave.connect(relayer).proposeAddress(metatxn, approvalString, 2000000000000000)).to.be.reverted;
-  await expect(enclave.connect(relayer).confirmApproval(metatxnFinal, approvalString, "20000000000000000000")).to.be.revertedWith("insufficient balance");
+
+  await expect (enclave.connect(relayer).proposeAddress(metatxn, approvalString, 2000000000000000)).to.be.revertedWith("propose a different address");
 
   // CONFIRM APPROVALS REQUIRE STATEMENTS FAIL:
 
@@ -783,215 +784,8 @@ describe("approveAddress", function() {
 });
 
 
-describe("approveSecondAddress", function() {
-  it("Should approve a second address", async function () {
-    const approvalString = "Sign to grant access to your funds by the new wallet shown above";
-    const accounts = await ethers.getSigners();
-    let _approvedAddress = accounts[5].address;
-    console.log("here is the address hoping for approval: " + _approvedAddress);
-    const msgParams = {
-    domain: {
-      // Give a user friendly name to the specific contract you are signing for.
-      name: "CoinStir",
-      // Just let's you know the latest version.
-      version: "1",
-      // Defining the chain aka Rinkeby testnet or Ethereum Main Net
-      chainId: 23295,
-      // Make sure you are establishing contracts with the proper entity
-      verifyingContract: "0x0000000000000000000000000000000000000000",
-    },
-    // Defining the message signing data content.
-    message: {
-      /*
-      - Anything you want. Just a JSON Blob that encodes the data you want to send
-      - No required fields
-      - This is DApp Specific
-      - Be as explicit as possible when building out the message schema.
-      */
-      recipiant: _approvedAddress,
-      value: approvalString,
 
-    },
-    // Refers to the keys of the *types* object below.
-    primaryType: "Message",
-    types: {
-      // Refer to primaryType
-      Message: [
-        { name: "recipiant", type: "address" },
-        { name: "value", type: "string" },
-      ],
-    },
-  };
-  let approveSignature = await user.signTypedData(msgParams.domain, msgParams.types, msgParams.message);
-  console.log(approveSignature);
-  const _data = {
-      _walletB: _approvedAddress,
-      _signature: approveSignature
-      };
-      console.log("data: " + _data);
-  var metatxn = await enclave.connect(user).createMetaTxnAddr(_data);
-  console.log("meta: " + metatxn);
-  await expect (enclave.connect(relayer).proposeAddress(metatxn, approvalString, "20000000000000000000")).to.be.revertedWith("insufficient balance");
-  const actualtxn = await enclave.connect(relayer).proposeAddress(metatxn, approvalString, 2000000000000000);
-  expect(actualtxn).to.exist;
-  await expect (enclave.connect(user).proposeAddress(metatxn, approvalString, 2000000000000000)).to.be.reverted;
 
-// PART 2 
-      let approvedAddressSign = accounts[2];
-      console.log(approvedAddressSign);
-
-    const msgParamsFinal = {
-    domain: {
-      // Give a user friendly name to the specific contract you are signing for.
-      name: "CoinStir",
-      // Just let's you know the latest version.
-      version: "1",
-      // Defining the chain aka Rinkeby testnet or Ethereum Main Net
-      chainId: 23295,
-      // Make sure you are establishing contracts with the proper entity
-      verifyingContract: "0x0000000000000000000000000000000000000000",
-    },
-    // Defining the message signing data content.
-    message: {
-      /*
-      - Anything you want. Just a JSON Blob that encodes the data you want to send
-      - No required fields
-      - This is DApp Specific
-      - Be as explicit as possible when building out the message schema.
-      */
-      recipiant: userAddress,
-      value: approvalString,
-
-    },
-    // Refers to the keys of the *types* object below.
-    primaryType: "Message",
-    types: {
-      // Refer to primaryType
-      Message: [
-        { name: "recipiant", type: "address" },
-        { name: "value", type: "string" },
-      ],
-    },
-  };
-
-  let approveSignatureFinal = await approvedAddressSign.signTypedData(msgParamsFinal.domain, msgParamsFinal.types, msgParamsFinal.message);
-  console.log(approveSignatureFinal);
-  const _dataFinal = {
-      _walletB: userAddress,
-      _signature: approveSignatureFinal
-      };
-      console.log("dataFinal: " + _dataFinal);
-  var metatxnFinal = await enclave.connect(approvedAddressSign).createMetaTxnAddr(_dataFinal);
-  console.log("metaFinal: " + metatxnFinal);
-  const actualtxnFinal = await enclave.connect(relayer).confirmApproval(metatxnFinal, approvalString, 2000000000000000);
-  expect(actualtxnFinal).to.exist;
-  }); 
-});
-
-describe("approveThirdAddress", function() {
-  it("Should approve a second address", async function () {
-    const approvalString = "Sign to grant access to your funds by the new wallet shown above";
-    const accounts = await ethers.getSigners();
-    let _approvedAddress = accounts[9].address;
-    console.log("here is the address hoping for approval: " + _approvedAddress);
-    const msgParams = {
-    domain: {
-      // Give a user friendly name to the specific contract you are signing for.
-      name: "CoinStir",
-      // Just let's you know the latest version.
-      version: "1",
-      // Defining the chain aka Rinkeby testnet or Ethereum Main Net
-      chainId: 23295,
-      // Make sure you are establishing contracts with the proper entity
-      verifyingContract: "0x0000000000000000000000000000000000000000",
-    },
-    // Defining the message signing data content.
-    message: {
-      /*
-      - Anything you want. Just a JSON Blob that encodes the data you want to send
-      - No required fields
-      - This is DApp Specific
-      - Be as explicit as possible when building out the message schema.
-      */
-      recipiant: _approvedAddress,
-      value: approvalString,
-
-    },
-    // Refers to the keys of the *types* object below.
-    primaryType: "Message",
-    types: {
-      // Refer to primaryType
-      Message: [
-        { name: "recipiant", type: "address" },
-        { name: "value", type: "string" },
-      ],
-    },
-  };
-  let approveSignature = await user.signTypedData(msgParams.domain, msgParams.types, msgParams.message);
-  console.log(approveSignature);
-  const _data = {
-      _walletB: _approvedAddress,
-      _signature: approveSignature
-      };
-      console.log("data: " + _data);
-  var metatxn = await enclave.connect(user).createMetaTxnAddr(_data);
-  console.log("meta: " + metatxn);
-  await expect (enclave.connect(relayer).proposeAddress(metatxn, approvalString, "20000000000000000000")).to.be.revertedWith("insufficient balance");
-  const actualtxn = await enclave.connect(relayer).proposeAddress(metatxn, approvalString, 2000000000000000);
-  expect(actualtxn).to.exist;
-  await expect (enclave.connect(user).proposeAddress(metatxn, approvalString, 2000000000000000)).to.be.reverted;
-
-// PART 2 
-      let approvedAddressSign = accounts[2];
-      console.log(approvedAddressSign);
-
-    const msgParamsFinal = {
-    domain: {
-      // Give a user friendly name to the specific contract you are signing for.
-      name: "CoinStir",
-      // Just let's you know the latest version.
-      version: "1",
-      // Defining the chain aka Rinkeby testnet or Ethereum Main Net
-      chainId: 23295,
-      // Make sure you are establishing contracts with the proper entity
-      verifyingContract: "0x0000000000000000000000000000000000000000",
-    },
-    // Defining the message signing data content.
-    message: {
-      /*
-      - Anything you want. Just a JSON Blob that encodes the data you want to send
-      - No required fields
-      - This is DApp Specific
-      - Be as explicit as possible when building out the message schema.
-      */
-      recipiant: userAddress,
-      value: approvalString,
-
-    },
-    // Refers to the keys of the *types* object below.
-    primaryType: "Message",
-    types: {
-      // Refer to primaryType
-      Message: [
-        { name: "recipiant", type: "address" },
-        { name: "value", type: "string" },
-      ],
-    },
-  };
-
-  let approveSignatureFinal = await approvedAddressSign.signTypedData(msgParamsFinal.domain, msgParamsFinal.types, msgParamsFinal.message);
-  console.log(approveSignatureFinal);
-  const _dataFinal = {
-      _walletB: userAddress,
-      _signature: approveSignatureFinal
-      };
-      console.log("dataFinal: " + _dataFinal);
-  var metatxnFinal = await enclave.connect(approvedAddressSign).createMetaTxnAddr(_dataFinal);
-  console.log("metaFinal: " + metatxnFinal);
-  const actualtxnFinal = await enclave.connect(relayer).confirmApproval(metatxnFinal, approvalString, 2000000000000000);
-  expect(actualtxnFinal).to.exist;
-  }); 
-});
 
 describe("getApprovedAddr", function() {
   it("Should return the specific approved address by array position of an origin address", async function () {
@@ -1036,7 +830,7 @@ const msgParams = {
 
     console.log("sig is: " + signInSignature);
 
-    const result = await enclave.connect(user).getApprovedAddr(signInSignature, msg, 1);
+    const result = await enclave.connect(user).getApprovedAddr(signInSignature, msg, 0);
     console.log("The address in the requested position is: " + result);
     expect(result).to.exist;
   }); 
@@ -1089,7 +883,6 @@ describe("SetCelerFeeROSE", function() {
       const num = {value: ethers.parseEther(_num)};
       const numvalue = num.value;
       const numString = numvalue.toString();
-      console.log(numString);
     await enclave.connect(admin).setCelerFeeROSE(numString);
     expect(await enclave.celerFeeROSE()).to.equal(numString);
     await expect (enclave.connect(user).setCelerFeeROSE(numString)).to.be.reverted;
@@ -1098,17 +891,36 @@ describe("SetCelerFeeROSE", function() {
 
 describe("claimGas", function() {
   it("Should claim gas fees earned", async function () {
-    const tx = await enclave.connect(admin).claimGas(0);
+      const _payload = "1"
+      const payload = {value: ethers.parseEther(_payload)}
+    const tx = await enclave.connect(admin).claimGas(payload);
     expect(tx).to.exist;
-    await expect (enclave.connect(user).claimGas(0)).to.be.reverted;
+    await expect (enclave.connect(user).claimGas(payload)).to.be.reverted;
+
+        const _num = "5";
+      const num = {value: ethers.parseEther(_num)};
+      const numvalue = num.value;
+      const numString = numvalue.toString();
+    await enclave.connect(admin).setCelerFeeROSE(numString);
+
+    await expect (enclave.connect(admin).claimGas(payload)).to.be.reverted;
+
+    await enclave.connect(admin).setCelerFeeROSE(numString);
   }); 
 });
 
 describe("claimFee", function() {
   it("Should claim service fees earned", async function () {
-    const tx = await enclave.connect(admin).claimFee(0);
+      const _payload = "6"
+      const payload = {value: ethers.parseEther(_payload)}
+    const tx = await enclave.connect(admin).claimFee(payload);
     expect(tx).to.exist;
-    await expect (enclave.connect(user).claimFee(0)).to.be.reverted;
+    await expect (enclave.connect(user).claimFee(payload)).to.be.reverted;
+
+      const _badPayload = "2"
+      const badPayload = {value: ethers.parseEther(_badPayload)}
+
+    await expect (enclave.connect(admin).claimFee(badPayload)).to.be.reverted;
     expect(await enclave.feeClaim()).to.equal("0");
   }); 
 });
