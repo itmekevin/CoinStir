@@ -201,33 +201,33 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     }
 
 /**
-* @dev accepts info from the relayer to approve the address dictated by a user in the above meta-txn
+* @dev allows for an address to confirm the approval proposed by an origin address, thus making the address that successfully calls this function an approved address for the wallet that proposed the approval.
 * @param signedMsg is the return data from 'createMetaTxnAddr'
 * @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
-* @notice users must have created the meta-txn with their originAddress to utilize this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
-* @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
-* @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
+* @notice the confirming address becomes an approved address of the proposing address, thus making any funds deposited by this confirming address accessible by the proposing address and vice versa.
+* @notice the original address that proposed this approval gets charged a second time upon confirmation of the approval, this is to prevent abuse of the relayers funds.
+* @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
 */
-    function confirmApproval(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
-        (address OG, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
-        address sender = txnSigner(OG, value, signature);
-                require (proposedOG[sender] == OG, "input addr did not initiate approval");
-                require (userBalance[OG] > gasPrice, "insufficient balance");
-                    userBalance[OG] -= gasPrice;
-                    approvedAddress[OG].push(sender);
-                    originAddress[sender] = OG;
+    function confirmApproval(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
+        (address origin, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
+        address sender = txnSigner(origin, value, signature);
+                require (proposedOrigin[sender] == origin, "invalid address");
+                require (userBalance[origin] >= gasPrice, "insufficient balance");
+                    userBalance[origin] -= gasPrice;
+                    approvedAddress[origin].push(sender);
+                    originAddress[sender] = origin;
+                    proposedOrigin[sender] = address(0);
                     txnNumber ++;
                         TXN storage t = TXNno[txnNumber];
                         t.blocknum = block.number;
                         t.recipiant = sender;
-                        t.sendingWallet = OG;
+                        t.sendingWallet = origin;
                         t.amount = 0;
                         t.fee = 0;
-                        t.availBal = userBalance[OG];
-                    origintxns[OG].push(txnNumber);
+                        t.availBal = userBalance[origin];
+                    origintxns[origin].push(txnNumber);
                     reclaimGas += gasPrice;
-                    return (Result.Success);
     }
 
 /**
