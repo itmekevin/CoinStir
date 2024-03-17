@@ -44,6 +44,16 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     uint256 public depositGasPrice = 2000000000000000;
 
 /**
+* @dev sets the Celer message fee for messages originating on ETH.
+*/
+    uint256 public celerFeeETH = 300000000000000;
+
+/**
+* @dev sets the Celer message fee for messages originating on Sapphire.
+*/
+    uint256 public celerFeeROSE = 0;
+
+/**
 * @dev placeholder for the address of the host counterpart of this contract.
 */
     address public coinStir;
@@ -322,8 +332,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
         if (originAddress[sender] == address(0)) {
             originAddress[sender] = sender;
         }
-            address OG = originAddress[sender];
-            userBalance[OG] += (payload - depositGasPrice);
+            address origin = originAddress[sender];
+            userBalance[origin] += (payload - depositGasPrice - celerFeeETH);
             txnNumber ++;
                 TXN storage t = TXNno[txnNumber];
                 t.blocknum = block.number;
@@ -331,8 +341,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
                 t.sendingWallet = sender;
                 t.amount = payload;
                 t.fee = 0;
-                t.availBal = userBalance[OG];
-            origintxns[OG].push(txnNumber);
+                t.availBal = userBalance[origin];
+            origintxns[origin].push(txnNumber);
             contractBalance += payload;
             reclaimGas += depositGasPrice;
         return (Result.Success);
@@ -528,6 +538,20 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function blockWallet(address _badWallet) external onlyAdmin {
         blockedList[_badWallet] = !blockedList[_badWallet];
+    }
+
+/**
+* @dev update the Celer message fee in ETH.
+*/
+    function setCelerFeeETH(uint256 _celerFeeETH) external onlyAdmin {
+        celerFeeETH = _celerFeeETH;
+    }
+
+/**
+* @dev update the Celer message fee in ROSE.
+*/
+    function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
+        celerFeeROSE = _celerFeeROSE;
     }
 
 }
