@@ -237,21 +237,20 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
 * @notice users must have created the meta-txn with their originAddress to utilize this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
-* @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
-    function revokeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer returns (Result) {
+    function revokeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
         (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
         address sender = txnSigner(_walletB, value, signature);
                 require (sender == originAddress[sender], "must use origin address");
-                require (userBalance[sender] > gasPrice, "insufficient balance");
+                require (userBalance[sender] >= gasPrice, "insufficient balance");
                     userBalance[sender] -= gasPrice;
                     // DELETE SUBMITTED ADDRESS FROM APPROVAL LIST
                             for (uint i = 0; i < approvedAddress[sender].length; i++) {
                                 if (approvedAddress[sender][i] == _walletB) {
-                                    if (i != approvedAddress[sender].length - 1) {
-                                        approvedAddress[sender][i] = approvedAddress[sender][approvedAddress[sender].length - 1];
-                                    }
+                                    approvedAddress[sender][i] = approvedAddress[sender][approvedAddress[sender].length - 1];
                                     approvedAddress[sender].pop();
+                                    proposedOrigin[_walletB] = address(0);
+                                    originAddress[_walletB] = address(0);
                                     break;
                                 }
                             }
@@ -265,7 +264,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
                         t.availBal = userBalance[sender];
                     origintxns[sender].push(txnNumber);
                     reclaimGas += gasPrice;
-                    return (Result.Success);
     }
 
 ////////////////////////////////////////////////// - TRANSACTIONAL - //////////////////////////////////////////////////
