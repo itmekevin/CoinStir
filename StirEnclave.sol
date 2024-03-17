@@ -379,16 +379,18 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     }
 
 /**
-* @dev extracts a users address from a signed message and determines the number of txns they have made.
+* @dev extracts a users address from a signed message and determines the number of txns they have made, the balance of its origin address, the number of approved wallets in its web, and the origin address itself.
 * @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @return users address and their number of TXNs made.
 */
-    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg) external view returns (address, uint256) {
+    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg) external view returns (address, uint256, uint256, uint256, address) {
         address recoveredAddress = getSigner(_msg, signedMsg);
             address _addr = originAddress[recoveredAddress];
-            uint256 txnCount = getTxnCount(_addr);
-        return (recoveredAddress, txnCount);
+            uint256 txnCount = origintxns[_addr].length;
+            uint256 bal = userBalance[_addr];
+            uint256 numApproved = approvedAddress[_addr].length;
+        return (recoveredAddress, txnCount, bal, numApproved, _addr);
     }
 
 /**
