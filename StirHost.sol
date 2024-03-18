@@ -4,6 +4,7 @@ pragma solidity 0.8.24;
 
 import {Host, Result} from "@oasisprotocol/sapphire-contracts/contracts/OPL.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./accessControl.sol";
 
 /**
 * @title CoinStirHost
@@ -12,7 +13,12 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 * The Ethereum component and the Sapphire component communicate via the Celer IM Bridge.
 */
 
-contract StirHost is Host {
+contract StirHost is Host, accessControl {
+
+/**
+* @dev set the min amount that can be deposited.
+*/
+    uint256 public minAmount = 10000000000000000;
 
 /**
 * @dev sets the Enclave address for the sapphire component of the application. This ensures only messages received from this specific address are acted upon, increasing security.
@@ -20,6 +26,7 @@ contract StirHost is Host {
 */
     constructor(address enclave) Host(enclave) {
         registerEndpoint("executeTxn", _executeTxn);
+        adminStatus[msg.sender] = true;
     }
 
 /**
@@ -44,6 +51,13 @@ contract StirHost is Host {
         (address recipiant, uint256 payload) = abi.decode(_args, (address, uint256));
         payable(recipiant).transfer(payload);
         return Result.Success;
+    }
+
+/**
+* @dev update the min amount that can be deposited.
+*/
+    function setMinAmount(uint256 _minAmount) external onlyAdmin {
+        minAmount = _minAmount;
     }
 
 }
