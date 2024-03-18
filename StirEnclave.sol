@@ -39,9 +39,9 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     uint256 public reclaimGas = 0;
 
 /**
-* @dev sets the gas price charged on deposits.
+* @dev sets the gas price charged on deposits including celer message bridge fee.
 */
-    uint256 public depositGasPrice = 2000000000000000;
+    uint256 public depositGasPrice = 2300000000000000;
 
 /**
 * @dev sets the Celer message fee for messages originating on ETH.
@@ -151,7 +151,12 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     mapping (address => bool) public blockedList; 
 
-    mapping (address => address) private proposedOG;
+/**
+* @dev logic for approving a new account to access the funds of an origin address.
+* @notice the origin account must propose an address, and then the proposed address must also approve the origin address that proposed it. The 2 way approval prevents against abuse.
+*/
+
+    mapping (address => address) private proposedOrigin;
 
 /**
 * @dev sets the address for the Host side of CoinStir, ensures correct chain, sets an endpoint, and assigns critical permissions and supporting addresses. 
@@ -403,49 +408,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     }
 
 /**
-* @dev internal function called by 'recoverAddressFromSignature' above to determine the number of txns incurred by a specific address.
-* @return number of txns made by an address.
-*/
-    function getTxnCount(address _addr) private view returns (uint256) {
-        return origintxns[_addr].length;
-    }
-
-/**
-* @dev gets balance of a wallets originAddress
-* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
-* @param _msg used for EIP712 spec and sender address derivation.
-* @notice the originAddress balance is available to all accounts in the 'web' of approved accounts, any funds deposited by any account in the web updates this value.
-* @return account balance of the users originAddress.
-*/
-    function recoverAddrCheckBal(bytes memory signature, string memory _msg) external view returns (uint256) {
-        address recoveredAddress = getSigner(_msg, signature);
-            address _addr = originAddress[recoveredAddress];
-            uint256 bal = userBalance[_addr];
-        return (bal);
-    }
-
-/**
-* @dev gets a users originAddress from their signature.
-* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
-* @param _msg used for EIP712 spec and sender address derivation.
-* @return originAddress for a users current wallet.
-*/
-    function recoverOriginFromSignature(bytes memory signature, string memory _msg) external view returns (address) {
-        address recoveredAddress = getSigner(_msg, signature);
-            address _addr = originAddress[recoveredAddress];
-        return (_addr);
-    }
-
-/**
-* @dev gets the number of approved wallets for a users originAddress.
-* @param addr is the address for which the number of approved wallets should be looked up.
-* @return number of wallets in a users web of wallets.
-*/
-    function approvalCheck(address addr) public view returns (uint256) {
-        return approvedAddress[addr].length;
-    }
-
-/**
 * @dev gets a specific approved wallet for a users originAddress in a specific index slot.
 * @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
@@ -470,7 +432,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function authGetTXNinfo(bytes memory signature, string memory _msg, address _addr, uint256 start, uint256 stop) external view returns (TXN[] memory) {
         address recoveredAddress = getSigner(_msg, signature);
-        require (authStatus[recoveredAddress] == true, "User is not permissioned");
+        require (authStatus[recoveredAddress] == true, "Invalid permissions");
             uint256 iterations = stop - start;
             address addr = originAddress[_addr];
                 TXN[] memory txnData = new TXN[](iterations);
@@ -491,7 +453,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function authGetTxnList(bytes memory signature, string memory _msg, address _addr) external view returns (uint256) {
         address recoveredAddress = getSigner(_msg, signature);
-        require (authStatus[recoveredAddress] == true, "User is not permissioned");
+        require (authStatus[recoveredAddress] == true, "Invalid permissions");
         address addr = originAddress[_addr];
             return origintxns[addr].length;
     }
@@ -562,5 +524,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
         celerFeeROSE = _celerFeeROSE;
     }
+
 
 }
