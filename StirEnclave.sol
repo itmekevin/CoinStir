@@ -44,11 +44,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     uint256 public depositGasPrice = 2300000000000000;
 
 /**
-* @dev sets the Celer message fee for messages originating on ETH.
-*/
-    uint256 public celerFeeETH = 300000000000000;
-
-/**
 * @dev sets the Celer message fee for messages originating on Sapphire.
 */
     uint256 public celerFeeROSE = 0;
@@ -345,7 +340,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
             originAddress[sender] = sender;
         }
             address origin = originAddress[sender];
-            userBalance[origin] += (payload - depositGasPrice - celerFeeETH);
+            userBalance[origin] += (payload - depositGasPrice);
             txnNumber ++;
                 TXN storage t = TXNno[txnNumber];
                 t.blocknum = block.number;
@@ -511,13 +506,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function blockWallet(address _badWallet) external onlyAdmin {
         blockedList[_badWallet] = !blockedList[_badWallet];
-    }
-
-/**
-* @dev update the Celer message fee in ETH.
-*/
-    function setCelerFeeETH(uint256 _celerFeeETH) external onlyAdmin {
-        celerFeeETH = _celerFeeETH;
     }
 
 /**
