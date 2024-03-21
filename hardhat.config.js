@@ -14,7 +14,7 @@ const { HardhatUserConfig, task } = require('hardhat/config');
 const { ethers } = require("ethers");
 
 const oasis_API_KEY = "https://testnet.sapphire.oasis.dev";
-const INFURA_API_KEY = "https://goerli.infura.io/v3/c893b23e8bb14c85899887b76b2bd363";
+const INFURA_API_KEY = "https://public.stackup.sh/api/v1/node/bsc-testnet";
 const WALLET_KEY = "fb55ff6133a9674e59e3de02bce7fb3d810c700ff30fbafd035b93af45f4434f";
 const adminKey = "7b39d312e9335eb3bfe7bf570e2d7b352da33bc85e5ee971f773421b9b417f08";
 
@@ -27,10 +27,10 @@ module.exports = {
       accounts: [WALLET_KEY, adminKey],
       chainId: 23295,
     },
-    goerli: {
+    bsc: {
       url: INFURA_API_KEY,
       accounts: [WALLET_KEY, adminKey],
-      chainId: 5,
+      chainId: 97,
     }
   }
 };
@@ -92,5 +92,4 @@ task("deploy-host", "launches host address, requires enclave deployed address")
         const thisAddr = await host.getAddress();
             console.log('StirHost deployed to address: ' + thisAddr);
 });
-
 
