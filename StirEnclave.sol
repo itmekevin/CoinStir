@@ -476,7 +476,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
         require (msg.value >= celerFeeROSE);
         uint256 _reclaimGas = reclaimGas;
         reclaimGas = 0;
-        postMessage("executeTxn", abi.encode(gasWallet, reclaimGas));
+        postMessage("executeTxn", abi.encode(gasWallet, _reclaimGas));
     }
 
 /**
