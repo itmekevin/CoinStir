@@ -24,14 +24,14 @@ contract VerifyTypedData {
 
     function txnSigner(address recipiant, string memory value, bytes memory _signature)
         public
-        pure
+        view
         returns (address)
     {
         // EIP721 domain type
         string memory name = "CoinStir";
         string memory version = "1";
         uint256 chainId = 23295;
-        address verifyingContract = address(0); // Use address(0) or specify the actual contract address.
+        address verifyingContract = address(this); // Use address(0) or specify the actual contract address.
 
         // stringified types
         string memory EIP712_DOMAIN_TYPE = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
