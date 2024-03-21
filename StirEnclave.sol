@@ -163,7 +163,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice a feeWallet is set, providing a destination for fees accrued by the service to be sent. This address should be updated at the time of deploying.
 * @notice a gasWallet is set, providing a destination for gas fees accrued by the service to be sent. This address should be updated at the time of deploying.
 */
-    constructor(address stirHost) Enclave(stirHost, autoswitch("ethereum")) {
+    constructor(address stirHost) Enclave(stirHost, autoswitch("bsc")) {
         registerEndpoint("trackDeposit", _trackDeposit);
         coinStir = stirHost;
         adminStatus[msg.sender] = true; // UPDATE
