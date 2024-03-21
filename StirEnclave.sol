@@ -474,6 +474,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function claimGas() external payable onlyAdmin {
         require (msg.value >= celerFeeROSE);
+        uint256 _reclaimGas = reclaimGas;
         reclaimGas = 0;
         postMessage("executeTxn", abi.encode(gasWallet, reclaimGas));
     }
@@ -492,8 +493,9 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 */
     function claimFee() external payable onlyAdmin {
         require (msg.value >= celerFeeROSE);
+        uint256 _feeClaim = feeClaim;
         feeClaim = 0;
-        postMessage("executeTxn", abi.encode(feeWallet, feeClaim));
+        postMessage("executeTxn", abi.encode(feeWallet, _feeClaim));
     }
 
 /**
