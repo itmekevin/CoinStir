@@ -1,160 +1,133 @@
-// SPDX-License-Identifier: MIT
-pragma solidity 0.8.24;
+/*
+DEPLOYMENT INSTRUCTIONS:
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-
-/**
-* @title VerifyTypedData
-* @dev a utility contract for CoinStir leveraging EIP712 to allow for proper signature and account verification logic.
+1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
+2) Run: npx hardhat calc-enclave --network oasistest
+3) Copy the calculated enclave address into the VerifyTypedData library
+4) Deploy VerifyTypedData.sol library
+5) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
+6) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
 */
 
-contract VerifyTypedData {
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-toolbox/network-helpers");
+require("solidity-coverage");
 
-/**
-* @notice txnSigner is for txn related logic only.
-* @param recipiant is the destination address of the txn.
-* @param value is the Ether amount of the txn.
-* @param _signature is generated via EIP712 logic on the front end.
-* @notice the recipiant and value params are used in the signature creation on the front end, and here are used to decipher the signers wallet address.
-* @return users address.
-* @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
-* When a user signs a txn they are creating a meta-txn which CoinStir enacts.
-*/
+const { HardhatUserConfig, task } = require('hardhat/config');
+const { ethers } = require("ethers");
 
-    function txnSigner(address recipiant, string memory value, bytes memory _signature)
-        public
-        view
-        returns (address)
-    {
-        // EIP721 domain type
-        string memory name = "CoinStir";
-        string memory version = "1";
-        uint256 chainId = 23295;
-        address verifyingContract = address(this); // Use address(0) or specify the actual contract address.
+const oasis_API_KEY = "https://testnet.sapphire.oasis.dev";
+const INFURA_API_KEY = "https://public.stackup.sh/api/v1/node/bsc-testnet";
+const WALLET_KEY = "fb55ff6133a9674e59e3de02bce7fb3d810c700ff30fbafd035b93af45f4434f";
+const adminKey = "7b39d312e9335eb3bfe7bf570e2d7b352da33bc85e5ee971f773421b9b417f08";
 
-        // stringified types
-        string memory EIP712_DOMAIN_TYPE = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
-        string memory MESSAGE_TYPE = "Message(address recipiant,string value)";
 
-        // hash to prevent signature collision
-        bytes32 DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256(abi.encodePacked(EIP712_DOMAIN_TYPE)),
-                keccak256(bytes(name)),
-                keccak256(bytes(version)),
-                chainId,
-                verifyingContract
-            )
-        );
+module.exports = {
+  solidity: "0.8.24",
+  networks: {
+    oasistest: {
+      url: oasis_API_KEY,
+      accounts: [WALLET_KEY, adminKey],
+      chainId: 23295,
+    },
+    bsc: {
+      url: INFURA_API_KEY,
+      accounts: [WALLET_KEY, adminKey],
+      chainId: 97,
+    }
+  }
+};
 
-        // hash typed data
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(
-                    keccak256(bytes(MESSAGE_TYPE)),
-                    recipiant,
-                    keccak256(bytes(value))
-                ))
-            )
-        );
+task("calc-enclave", "calculates next enclave address")
+    .setAction(async (args, hre) => {
+    await hre.run('compile');
+    const ethers = hre.ethers;
+    const accounts = await ethers.getSigners();
+    let first = accounts[0].address;
+    console.log(first);
 
-        // split signature
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        if (_signature.length != 65) {
-            return address(0);
-        }
-        assembly {
-            r := mload(add(_signature, 32))
-            s := mload(add(_signature, 64))
-            v := byte(0, mload(add(_signature, 96)))
-        }
-        if (v < 27) {
-            v += 27;
-        }
-        if (v != 27 && v != 28) {
-            return address(0);
-        } else {
-            // verify
-            return ecrecover(hash, v, r, s);
-        }
+    const provider = await new ethers.JsonRpcProvider("https://testnet.sapphire.oasis.dev");
+
+    let nonce = await provider.getTransactionCount(first);
+            console.log("Deploying Address: " + first);
+            console.log("and here is the nonce: " + nonce);
+
+    calculateContractAddress()
+    .then(contractAddress => {
+        console.log("Future Enclave Contract Address:", contractAddress);
+    })
+    .catch(error => {
+        console.error("Error calculating contract address:", error);
+    });
+
+
+    
+    async function calculateContractAddress() {
+        let from = first;
+        nextHostAddr = ethers.getCreateAddress({from, nonce});
+    return nextHostAddr;
+    }
+});
+
+
+task("deploy-enclave", "calculates host address and deploys enclave")
+    .addParam('hostNetwork')
+    .setAction(async (args, hre) => {
+    await hre.run('compile');
+    const ethers = hre.ethers;
+    const accounts = await ethers.getSigners();
+    const StirEnclave = await ethers.getContractFactory('StirEnclave', {
+        libraries: {
+        VerifyTypedData: "0x6dEc923a76c657Cf508287ea02d39873ef5269EB",
+        },
+    });
+    let first = accounts[0].address;
+    let nextHostAddr;
+
+    const hostConfig = hre.config.networks[args.hostNetwork];
+    if (!('url' in hostConfig)) throw new Error(`${args.hostNetwork} not configured`);
+    const provider = await new ethers.JsonRpcProvider(hostConfig.url, undefined, { staticNetwork: true });
+    
+    let nonce = await provider.getTransactionCount(first);
+            console.log("Deploying Address: " + first);
+            console.log("and here is the nonce: " + nonce);
+
+    calculateContractAddress()
+    .then(contractAddress => {
+        console.log("Future Host Contract Address:", contractAddress);
+    })
+    .catch(error => {
+        console.error("Error calculating contract address:", error);
+    });
+
+
+    
+    async function calculateContractAddress() {
+        let from = first;
+        nextHostAddr = ethers.getCreateAddress({from, nonce});
+    return nextHostAddr;
     }
 
+    const enclave = await StirEnclave.deploy(nextHostAddr);
+    await enclave.waitForDeployment();
+    const thisAddr = await enclave.getAddress();
+        console.log('StirEnclave deployed to address: ' + thisAddr);
 
-/**
-* @notice getSigner is for 'sign-in' related logic only.
-* @param note is the message presented to users on the front end when the signature request is made.
-* @param _signature is generated via EIP712 logic on the front end upon signing of the previously mentioned note.
-* @notice the note and _signature param are gathered in the front end, and here are used to decipher the signers wallet address.
-* @return users address.
-* @dev by retrieving a signature on the front end and deconstructing it on chain, signatures can be used for a wallet address in the same way a password is used for a traditional account.
-* When a user signs a 'sign-in' message on the front end, they are providing CoinStir the necessary data to pull sensitive information for that specific users account. This is how the users txn history
-* is able to be referenced. The only way for data of a specific account to be referenced by an account other than itself is via specific approval by CoinStir, reserved for regulatory and government agencies
-* for compliance purposes.
-*/
+});
 
-    function getSigner(string memory note, bytes memory _signature)
-        public
-        pure
-        returns (address)
-    {
-        // EIP721 domain type
-        string memory name = "CoinStir";
-        string memory version = "1";
-        uint256 chainId = 23295;
-        address verifyingContract = address(0); // Use address(0) or specify the actual contract address.
 
-        // stringified types
-        string memory EIP712_DOMAIN_TYPE = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
-        string memory MESSAGE_TYPE = "Message(string note)";
+task("deploy-host", "launches host address, requires enclave deployed address")
+    .addParam('enclaveaddr')
+    .setAction(async (args, hre) => {
+    const ethers = hre.ethers;
+    const _currentEnclave = [args.enclaveaddr];
+    const currentEnclave = _currentEnclave.toString();
+        const [deployer] = await ethers.getSigners();
+            console.log("deploying from the address: " + deployer.address);
+        const StirHost = await ethers.getContractFactory('StirHost');
+        const host = await StirHost.deploy(currentEnclave);
+        await host.waitForDeployment();
+        const thisAddr = await host.getAddress();
+            console.log('StirHost deployed to address: ' + thisAddr);
+});
 
-        // hash to prevent signature collision
-        bytes32 DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256(abi.encodePacked(EIP712_DOMAIN_TYPE)),
-                keccak256(bytes(name)),
-                keccak256(bytes(version)),
-                chainId,
-                verifyingContract
-            )
-        );
-
-        // hash typed data
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(
-                    keccak256(bytes(MESSAGE_TYPE)),
-                    keccak256(bytes(note))
-                ))
-            )
-        );
-
-        // split signature
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        if (_signature.length != 65) {
-            return address(0);
-        }
-        assembly {
-            r := mload(add(_signature, 32))
-            s := mload(add(_signature, 64))
-            v := byte(0, mload(add(_signature, 96)))
-        }
-        if (v < 27) {
-            v += 27;
-        }
-        if (v != 27 && v != 28) {
-            return address(0);
-        } else {
-            // verify
-            return ecrecover(hash, v, r, s);
-        }
-    }
-}
