@@ -3,7 +3,7 @@ DEPLOYMENT INSTRUCTIONS:
 
 1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
 2) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
-3) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network goerli --enclaveaddr <insert the enclave address here>
+3) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
 */
 
 require("@nomicfoundation/hardhat-toolbox");
@@ -36,13 +36,18 @@ module.exports = {
 };
 
 
+
 task("deploy-enclave", "calculates host address and deploys enclave")
     .addParam('hostNetwork')
     .setAction(async (args, hre) => {
     await hre.run('compile');
     const ethers = hre.ethers;
     const accounts = await ethers.getSigners();
-    const StirEnclave = await ethers.getContractFactory('StirEnclave');
+    const StirEnclave = await ethers.getContractFactory('StirEnclave', {
+        libraries: {
+        VerifyTypedData: "0xdE067d4a5C1551eaCcC5E42Ab2FDb681b4eaC5e6",
+        },
+    });
     let first = accounts[0].address;
     let nextHostAddr;
 
