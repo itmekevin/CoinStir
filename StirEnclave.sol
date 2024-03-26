@@ -69,6 +69,8 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @notice metaddr structure. This is used in packaging of meta-txns related to address approvals and revocation of address approvals.
 * @param _walletB is the wallet that will have permission granted or revoked.
+* @param _signature is the signature generated from the front-end.
+* @param nonce ensures signature can be used only once for a given operation.
 */
     struct metaddr {
         address _walletB;
@@ -81,6 +83,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param _payload is the value in Ethere.
 * @param _dest is the destination wallet address.
 * @param _signature is the signature generated from the front-end.
+* @param nonce ensures signature can be used only once for a given operation.
 */
     struct metaTXN {
         uint256 _payload;
@@ -178,6 +181,8 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev creates a meta-txn in the correct format for approval of a wallet to be granted or revoked.
 * @param _metaddr includes the wallet B and signature data necessary to execute the granting or revocation of approval on the users behalf.
+* @param _signature is the signature generated from the front-end.
+* @param nonce ensures signature can be used only once for a given operation.
 * @return data in the proper format for the relayer to initate granting or revocation of approval for a specified wallet.
 */
     function createMetaTxnAddr(metaddr calldata _metaddr) external pure returns (bytes memory) {
@@ -193,6 +198,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param signedMsg is the return data from 'createMetaTxnAddr'
 * @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @param nonce ensures signature can be used only once for a given operation.
 * @notice the proposing address must be an origin address
 * @notice the initiating address must have enough funds to cover the gas cost of this txn
 * @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
@@ -215,6 +221,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param signedMsg is the return data from 'createMetaTxnAddr'
 * @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @param nonce ensures signature can be used only once for a given operation.
 * @notice the confirming address becomes an approved address of the proposing address, thus making any funds deposited by this confirming address accessible by the proposing address and vice versa.
 * @notice the original address that proposed this approval gets charged a second time upon confirmation of the approval, this is to prevent abuse of the relayers funds.
 * @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
@@ -246,6 +253,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param signedMsg is the return data from 'createMetaTxnAddr'
 * @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @param nonce ensures signature can be used only once for a given operation.
 * @notice users must have created the meta-txn with their originAddress to utilize this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 */
@@ -282,6 +290,7 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev creates a meta-txn in the correct format for a txn to be created and executed by the relayer.
 * @param _metaTxn includes the payload, destination and signature data necessary to execute the txn.
+* @param nonce ensures signature can be used only once for a given operation.
 * @return data in the proper format for the relayer to initate a txn per specs issued by the user.
 */
     function createmetaTXN(metaTXN calldata _metaTxn) external pure returns (bytes memory) {
@@ -299,6 +308,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param val is the value in Ether of the txn.
 * @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
 * @param feeRate is the amount charged by CoinStir for the services provided.
+* @param nonce ensures signature can be used only once for a given operation.
 * @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee + the fee rate) for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 * @notice if the sending wallet is on the blocked list AND they are attempting to send funds to a different wallet, an error will throw. Users can always withdraw their own funds, but may be prevented from creating txns.
 */
@@ -367,6 +377,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param start is the starting point of users txn lookup.
 * @param stop is the stopping point of users txn lookup.
+* @param deadline ensures signature can be used only once for a given time period.
 * @notice a user can only pull up information from its own account due to signature verification.
 * @return all TXN data for specified range of a specific wallet.
 */
@@ -396,7 +407,8 @@ contract StirEnclave is Enclave, accessControl {
 * @dev extracts a users address from a signed message and determines the number of txns they have made, the balance of its origin address, the number of approved wallets in its web, and the origin address itself.
 * @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
-* @return users address and their number of TXNs made.
+* @param deadline ensures signature can be used only once for a given time period.
+* @return users address, their number of TXNs made, the balance of their origin account, the number of approved wallets and their origin address.
 */
     function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg, uint256 deadline) external view returns (address, uint256, uint256, uint256, address) {
         require(block.number <= (deadline + 600), "time expired");
@@ -413,6 +425,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param index is the slot number in the array of wallets to be returned.
+* @param deadline ensures signature can be used only once for a given time period.
 * @return wallet address in the specific slot number of approved wallets for the originAddress.
 */
     function getApprovedAddr(bytes memory signature, string memory _msg, uint256 index, uint256 deadline) public view returns (address) {
@@ -429,6 +442,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param start is the starting point of users txn lookup.
 * @param stop is the stopping point of users txn lookup.
+* @param deadline ensures signature can be used only once for a given time period.
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
 * @return all TXN data for specified range of a specific wallet.
 */
@@ -449,7 +463,8 @@ contract StirEnclave is Enclave, accessControl {
 * @dev retrieves the number of txns a specific account has made for an authorized user only.
 * @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own. In this case, proving the account has authStatus.
 * @param _msg used for EIP712 spec and sender address derivation.
-* @param _addr is the specific address being referenced
+* @param _addr is the specific address being referenced.
+* @param deadline ensures signature can be used only once for a given time period.
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
 * @return all TXN data for specified range of a specific wallet.
 */
@@ -463,7 +478,8 @@ contract StirEnclave is Enclave, accessControl {
 ////////////////////////////////////////////////// - OWNER CONTROLS - //////////////////////////////////////////////////
 
 /**
-* @dev sets the gas price on deposits
+* @dev sets the gas price on deposits to cover the celer message bridge cost.
+* @notice this does not add to the reclaimGas variable, as this value is spent on the message bridge, not collected by CoinStir.
 */
     function setDepositGasPrice(uint256 _depositGasPrice) external onlyAdmin {
         depositGasPrice = _depositGasPrice;
@@ -508,7 +524,7 @@ contract StirEnclave is Enclave, accessControl {
     }
 
 /**
-* @dev add or remove a wallet address from the blockedList.
+* @dev add or remove wallet addresses from the blockedList.
 * @notice default is to NOT be on the blockedList.
 */
 function blockWallet(address[] calldata _badWallets) external onlyAdmin {
@@ -523,10 +539,18 @@ function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
         celerFeeROSE = _celerFeeROSE;
     }
 
+/**
+* @dev signature verification for all login/getter functions.
+* @param deadline ensures signature can be used only once for a given time period.
+*/
 function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public pure returns (address) {
     return VerifyTypedData.getSigner(note, deadline, _signature);
 }
 
+/**
+* @dev signature verification for all txn/approval functions.
+* @param nonce ensures signature can be used for only one transaction.
+*/
 function txn712Lib(address recipiant, string memory value, bytes memory _signature, uint256 nonce) public pure returns (address) {
     return VerifyTypedData.txnSigner(recipiant, value, _signature, nonce);
 }
