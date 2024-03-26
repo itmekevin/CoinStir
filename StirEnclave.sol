@@ -3,8 +3,6 @@
 pragma solidity 0.8.24;
 
 import {Enclave, Result, autoswitch} from "@oasisprotocol/sapphire-contracts/contracts/OPL.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "./accessControl.sol";
 import "./VerifyTypedData.sol";
 
@@ -16,7 +14,7 @@ import "./VerifyTypedData.sol";
 * As detailed below, much of the txn data stored in the Enclave is only visible to the users that initated those txns.
 * Additionally, permissions have been built in for regulatory agencies to maintain oversight of activity within CoinStir in congruence with various anti-money laundering policies.
 */
-contract StirEnclave is Enclave, accessControl, VerifyTypedData {
+contract StirEnclave is Enclave, accessControl {
 
 /**
 * @dev explicitly sets the starting balance of the entire contract to zero.
@@ -75,6 +73,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     struct metaddr {
         address _walletB;
         bytes _signature;
+        uint256 nonce;
     }
 
 /**
@@ -87,6 +86,7 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
         uint256 _payload;
         address _dest;
         bytes _signature;
+        uint256 nonce;
     }
 
 /**
@@ -183,7 +183,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
     function createMetaTxnAddr(metaddr calldata _metaddr) external pure returns (bytes memory) {
         return (abi.encode(
             _metaddr._walletB,
-            _metaddr._signature
+            _metaddr._signature,
+            _metaddr.nonce
         ));
     }
 
@@ -197,8 +198,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
 */
     function proposeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
-        address sender = txnSigner(_walletB, value, signature);
+        (address _walletB, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
+        address sender = txn712Lib(_walletB, value, signature, nonce);
             require (sender == originAddress[sender], "must use origin address");
             require (userBalance[sender] >= gasPrice, "insufficient balance");
                 if (originAddress[_walletB] == address(0)) {
@@ -219,10 +220,11 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
 */
     function confirmApproval(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address origin, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
-        address sender = txnSigner(origin, value, signature);
+        (address origin, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
+        address sender = txn712Lib(origin, value, signature, nonce);
                 require (proposedOrigin[sender] == origin, "invalid address");
                 require (userBalance[origin] >= gasPrice, "insufficient balance");
+                require(nonce == origintxns[origin].length, "bad sig");
                     userBalance[origin] -= gasPrice;
                     approvedAddress[origin].push(sender);
                     originAddress[sender] = origin;
@@ -248,10 +250,11 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
 */
     function revokeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address _walletB, bytes memory signature) = abi.decode(signedMsg, (address, bytes));
-        address sender = txnSigner(_walletB, value, signature);
+        (address _walletB, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
+        address sender = txn712Lib(_walletB, value, signature, nonce);
                 require (sender == originAddress[sender], "must use origin address");
                 require (userBalance[sender] >= gasPrice, "insufficient balance");
+                require(nonce == origintxns[sender].length, "bad sig");
                     userBalance[sender] -= gasPrice;
                     // DELETE SUBMITTED ADDRESS FROM APPROVAL LIST
                             for (uint i = 0; i < approvedAddress[sender].length; i++) {
@@ -285,7 +288,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
         return (abi.encode(
             _metaTxn._payload,
             _metaTxn._dest,
-            _metaTxn._signature
+            _metaTxn._signature,
+            _metaTxn.nonce
         ));
     }
 
@@ -299,12 +303,13 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice if the sending wallet is on the blocked list AND they are attempting to send funds to a different wallet, an error will throw. Users can always withdraw their own funds, but may be prevented from creating txns.
 */
     function _trackTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate) external payable onlyRelayer {
-        (uint256 payload, address recipiant, bytes memory signature) = abi.decode(signedMsg, (uint256, address, bytes));
-            address sender = txnSigner(recipiant, val, signature);
+        (uint256 payload, address recipiant, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
+            address sender = txn712Lib(recipiant, val, signature, nonce);
             if (blockedList[sender] == true && recipiant != sender) {
                 revert("blocked sender");
             } else {
                 address _originAddr = originAddress[sender];
+                require(nonce == origintxns[_originAddr].length, "bad sig");
                 uint256 fee = ((payload*feeRate)/1000);
                     if (recipiant == _originAddr) {
                         fee = 0;
@@ -351,7 +356,6 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
                 t.availBal = userBalance[origin];
             origintxns[origin].push(txnNumber);
             contractBalance += payload;
-            reclaimGas += depositGasPrice;
         return (Result.Success);
     }
 
@@ -366,8 +370,9 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice a user can only pull up information from its own account due to signature verification.
 * @return all TXN data for specified range of a specific wallet.
 */
-    function recoverAddrTXNdata(bytes memory signedMsg, string memory _msg, uint256 start, uint256 stop) external view returns (TXN[] memory) {
-        address recoveredAddress = getSigner(_msg, signedMsg);
+    function recoverAddrTXNdata(bytes memory signedMsg, string memory _msg, uint256 deadline, uint256 start, uint256 stop) external view returns (TXN[] memory) {
+        require(block.number <= (deadline + 600), "time expired");
+        address recoveredAddress = use712Lib(_msg, deadline, signedMsg);
         address _addr = originAddress[recoveredAddress];
             uint256 iterations = stop - start;
                 TXN[] memory txnData = new TXN[](iterations);
@@ -393,8 +398,9 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @param _msg used for EIP712 spec and sender address derivation.
 * @return users address and their number of TXNs made.
 */
-    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg) external view returns (address, uint256, uint256, uint256, address) {
-        address recoveredAddress = getSigner(_msg, signedMsg);
+    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg, uint256 deadline) external view returns (address, uint256, uint256, uint256, address) {
+        require(block.number <= (deadline + 600), "time expired");
+        address recoveredAddress = use712Lib(_msg, deadline, signedMsg);
             address _addr = originAddress[recoveredAddress];
             uint256 txnCount = origintxns[_addr].length;
             uint256 bal = userBalance[_addr];
@@ -409,8 +415,9 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @param index is the slot number in the array of wallets to be returned.
 * @return wallet address in the specific slot number of approved wallets for the originAddress.
 */
-    function getApprovedAddr(bytes memory signature, string memory _msg, uint256 index) public view returns (address) {
-        address recoveredAddress = getSigner(_msg, signature);
+    function getApprovedAddr(bytes memory signature, string memory _msg, uint256 index, uint256 deadline) public view returns (address) {
+        require(block.number <= (deadline + 600), "time expired");
+        address recoveredAddress = use712Lib(_msg, deadline, signature);
             return approvedAddress[recoveredAddress][index];
     }
 
@@ -425,8 +432,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
 * @return all TXN data for specified range of a specific wallet.
 */
-    function authGetTXNinfo(bytes memory signature, string memory _msg, address _addr, uint256 start, uint256 stop) external view returns (TXN[] memory) {
-        address recoveredAddress = getSigner(_msg, signature);
+    function authGetTXNinfo(bytes memory signature, string memory _msg, address _addr, uint256 start, uint256 stop, uint256 deadline) external view returns (TXN[] memory) {
+        address recoveredAddress = use712Lib(_msg, deadline, signature);
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
             uint256 iterations = stop - start;
             address addr = originAddress[_addr];
@@ -446,8 +453,8 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
 * @return all TXN data for specified range of a specific wallet.
 */
-    function authGetTxnList(bytes memory signature, string memory _msg, address _addr) external view returns (uint256) {
-        address recoveredAddress = getSigner(_msg, signature);
+    function authGetTxnList(bytes memory signature, string memory _msg, address _addr, uint256 deadline) external view returns (uint256) {
+        address recoveredAddress = use712Lib(_msg, deadline, signature);
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
         address addr = originAddress[_addr];
             return origintxns[addr].length;
@@ -504,16 +511,24 @@ contract StirEnclave is Enclave, accessControl, VerifyTypedData {
 * @dev add or remove a wallet address from the blockedList.
 * @notice default is to NOT be on the blockedList.
 */
-    function blockWallet(address _badWallet) external onlyAdmin {
-        blockedList[_badWallet] = !blockedList[_badWallet];
+function blockWallet(address[] calldata _badWallets) external onlyAdmin {
+    for (uint256 i = 0; i < _badWallets.length; i++) {
+        blockedList[_badWallets[i]] = !blockedList[_badWallets[i]];
     }
-
+}
 /**
 * @dev update the Celer message fee in ROSE.
 */
-    function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
+function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
         celerFeeROSE = _celerFeeROSE;
     }
 
+function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public pure returns (address) {
+    return VerifyTypedData.getSigner(note, deadline, _signature);
+}
+
+function txn712Lib(address recipiant, string memory value, bytes memory _signature, uint256 nonce) public pure returns (address) {
+    return VerifyTypedData.txnSigner(recipiant, value, _signature, nonce);
+}
 
 }
