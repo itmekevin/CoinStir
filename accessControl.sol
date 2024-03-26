@@ -28,7 +28,7 @@ contract accessControl {
 /**
 * @notice only an Admin can flip relayer status, providing strict controls and preventing abuse.
 * @dev flips relayer status to the opposite of its current state for a given user. Care should be taken to ensure constant up-time of at least one relayer.
-* @param accepts any address.
+* @param _relayer is the address of the relayer to flip the current status of.
 */
 
     function flipRelayer(address _relayer) external onlyAdmin returns (bool) {
@@ -49,7 +49,7 @@ contract accessControl {
 * @notice only an Admin can flip AdminStatus, providing strict controls and preventing abuse.
 * @notice an admin cannot revoke its own adminStatus, ensuring there is always at least 1 admin.
 * @dev specifics of AdminStatus are detailed in above notes.
-* @param accepts any address.
+* @param _admin is the address of the admin to flip the current status of.
 */
     function flipAdmin(address _admin) external onlyAdmin returns (bool) {
         require (msg.sender != _admin, "cannot revoke own access");
@@ -68,7 +68,7 @@ contract accessControl {
 /**
 * @notice only an Admin can flip auth status, providing strict controls and preventing abuse.
 * @dev specifics of authStatus are detailed in above notes. Care should be taken to ensure proper compliance with any relevant authority.
-* @param accepts any address.
+* @param _auth is the address of the authority to flip the current status of.
 */
     function flipAuth(address _auth) external onlyAdmin returns (bool) {
         authStatus[_auth] = !authStatus[_auth];
