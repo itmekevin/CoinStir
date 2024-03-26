@@ -2,8 +2,20 @@
 DEPLOYMENT INSTRUCTIONS:
 
 1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
-2) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
-3) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
+2) Run: npx hardhat calc-enclave --network oasistest.
+3) Copy the calculated enclave address into the VerifyTypedData library for the verifyingContract variable and save. Deploy the updated library with a separate account.
+4) Copy the library deployed address into the enclave-deploy function below and save.
+5) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
+6) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
+
+
+TESTING INSTRUCTIONS:
+
+1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
+2) Set the verifyingContract variable equal to <address(0)>.
+3) Copy the library deployed address into the enclave-deploy function below and save.
+4) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
+5) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
 */
 
 require("@nomicfoundation/hardhat-toolbox");
@@ -17,6 +29,8 @@ const oasis_API_KEY = "https://testnet.sapphire.oasis.dev";
 const INFURA_API_KEY = "https://public.stackup.sh/api/v1/node/bsc-testnet";
 const WALLET_KEY = "fb55ff6133a9674e59e3de02bce7fb3d810c700ff30fbafd035b93af45f4434f";
 const adminKey = "7b39d312e9335eb3bfe7bf570e2d7b352da33bc85e5ee971f773421b9b417f08";
+
+let libAddr;
 
 
 module.exports = {
@@ -35,6 +49,48 @@ module.exports = {
   }
 };
 
+task("calc-enclave", "calculates next enclave address")
+    .setAction(async (args, hre) => {
+    await hre.run('compile');
+    const ethers = hre.ethers;
+    const accounts = await ethers.getSigners();
+    let first = accounts[0].address;
+    console.log(first);
+
+    const provider = await new ethers.JsonRpcProvider("https://testnet.sapphire.oasis.dev");
+
+    let nonce = await provider.getTransactionCount(first);
+            console.log("Deploying Address: " + first);
+            console.log("and here is the nonce: " + nonce);
+
+    calculateContractAddress()
+    .then(contractAddress => {
+        console.log("Future Enclave Contract Address:", contractAddress);
+    })
+    .catch(error => {
+        console.error("Error calculating contract address:", error);
+    });
+
+
+    
+    async function calculateContractAddress() {
+        let from = first;
+        nextHostAddr = ethers.getCreateAddress({from, nonce});
+    return nextHostAddr;
+    }
+});
+
+
+task("deploy-library", "launches the VerifyTypedData library")
+    .setAction(async (args, hre) => {
+    const ethers = hre.ethers;
+        const accounts = await ethers.getSigners();
+        const lib = await ethers.getContractFactory('VerifyTypedData');
+        const library = await lib.deploy();
+        await library.waitForDeployment();
+        libAddr = await library.getAddress();
+            console.log('library deployed to address: ' + libAddr);
+});
 
 
 task("deploy-enclave", "calculates host address and deploys enclave")
@@ -45,7 +101,7 @@ task("deploy-enclave", "calculates host address and deploys enclave")
     const accounts = await ethers.getSigners();
     const StirEnclave = await ethers.getContractFactory('StirEnclave', {
         libraries: {
-        VerifyTypedData: "0xdE067d4a5C1551eaCcC5E42Ab2FDb681b4eaC5e6",
+        VerifyTypedData: "0xDFB2973D8274D768B0Ad15C127EA4fC40A14F9AA",
         },
     });
     let first = accounts[0].address;
