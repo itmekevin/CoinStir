@@ -19,32 +19,32 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev explicitly sets the starting balance of the entire contract to zero.
 */
-    uint256 private contractBalance = 0;
+    uint256 private contractBalance;
 
 /**
 * @dev explicitly sets the starting txn number to zero.
 */
-    uint256 private txnNumber = 0;
+    uint256 private txnNumber;
 
 /**
 * @dev explicitly sets the value of fees earned to zero.
 */
-    uint256 public feeClaim = 0;
+    uint256 public feeClaim;
 
 /**
 * @dev explicitly sets the amount of gas earned from meta-txn logic to zero.
 */
-    uint256 public reclaimGas = 0;
+    uint256 public reclaimGas;
 
 /**
 * @dev sets the gas price charged on deposits including celer message bridge fee.
 */
-    uint256 public depositGasPrice = 2300000000000000;
+    uint256 public depositGasPrice = 300000000000000;
 
 /**
 * @dev sets the Celer message fee for messages originating on Sapphire.
 */
-    uint256 public celerFeeROSE = 0;
+    uint256 public celerFeeROSE;
 
 /**
 * @dev placeholder for the address of the host counterpart of this contract.
@@ -242,8 +242,6 @@ contract StirEnclave is Enclave, accessControl {
                         t.blocknum = block.number;
                         t.recipiant = sender;
                         t.sendingWallet = origin;
-                        t.amount = 0;
-                        t.fee = 0;
                         t.availBal = userBalance[origin];
                     origintxns[origin].push(txnNumber);
                     reclaimGas += gasPrice;
@@ -280,8 +278,6 @@ contract StirEnclave is Enclave, accessControl {
                         t.blocknum = block.number;
                         t.recipiant = _walletB;
                         t.sendingWallet = sender;
-                        t.amount = 0;
-                        t.fee = 0;
                         t.availBal = userBalance[sender];
                     origintxns[sender].push(txnNumber);
                     reclaimGas += gasPrice;
@@ -363,7 +359,6 @@ contract StirEnclave is Enclave, accessControl {
                 t.recipiant = stirHost;
                 t.sendingWallet = sender;
                 t.amount = payload;
-                t.fee = 0;
                 t.availBal = userBalance[origin];
             origintxns[origin].push(txnNumber);
             contractBalance += payload;
@@ -468,7 +463,7 @@ contract StirEnclave is Enclave, accessControl {
 * @param _addr is the specific address being referenced.
 * @param deadline ensures signature can be used only once for a given time period.
 * @notice this function is only available to users with authStatus of 'true' which would only be granted to a regulatory agency or government.
-* @return all TXN data for specified range of a specific wallet.
+* @return number of txns made by a given account.
 */
     function authGetTxnList(bytes memory signature, string memory _msg, address _addr, uint256 deadline) external view returns (uint256) {
         address recoveredAddress = use712Lib(_msg, deadline, signature);
