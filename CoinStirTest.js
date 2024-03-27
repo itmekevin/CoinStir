@@ -62,7 +62,7 @@ describe("GasCheck", function() {
         console.log('StirEnclave deployed to address: ' + enclaveAddress);
     const StirHost = await ethers.getContractFactory('StirHost');
     host = await StirHost.deploy(enclaveAddress);
-    const setGas = 2300000000000000;
+    const setGas = 300000000000000;
     expect(await enclave.depositGasPrice()).to.equal(setGas);
     });
 });
@@ -973,6 +973,8 @@ describe("claimFee", function() {
 
 describe("authGetTXNinfo", function() {
   it("Should return txn data for the user when searched by an authorized wallet", async function () {
+          _deadline = await ethers.provider.getBlockNumber();
+      deadline = _deadline.toString();
     const msgParams = {
     domain: {
         // Give a user friendly name to the specific contract you are signing for.
@@ -1606,5 +1608,50 @@ const msgParams = {
 await mine(601);
     await expect (enclave.connect(user).getApprovedAddr(signInSignature, msg, 0, deadline)).to.be.revertedWith("time expired");
 
+  }); 
+});
+
+describe("authGetTXNinfo", function() {
+  it("Should return txn data for the user when searched by an authorized wallet", async function () {
+    const msgParams = {
+    domain: {
+        // Give a user friendly name to the specific contract you are signing for.
+        name: "CoinStir",
+        // Just let's you know the latest version.
+        version: "1",
+        // Defining the chain aka Rinkeby testnet or Ethereum Main Net
+        chainId: 23295,
+        // Make sure you are establishing contracts with the proper entity
+        verifyingContract: enclaveAddress,
+    },
+    // Defining the message signing data content.
+    message: {
+        /*
+        - Anything you want. Just a JSON Blob that encodes the data you want to send
+        - No required fields
+        - This is DApp Specific
+        - Be as explicit as possible when building out the message schema.
+        */
+        note: msg,
+        deadline: deadline
+    },
+    // Refers to the keys of the *types* object below.
+    primaryType: "Message",
+    types: {
+        Message: [
+            { name: "note", type: "string" },
+            { name: "deadline", type: "uint256" }
+        ],
+    }
+};
+
+    authSignInSignature = await authorizedUser.signTypedData(msgParams.domain, msgParams.types, msgParams.message);
+    await expect (enclave.connect(authorizedUser).authGetTXNinfo(authSignInSignature, msg, user, 0, 2, deadline)).to.be.revertedWith("time expired");
+  }); 
+});
+
+describe("authGetTxnList", function() {
+  it("Should return the list of txns for a user when searched by an authorized wallet", async function () {
+    await expect (enclave.connect(authorizedUser).authGetTxnList(authSignInSignature, msg, user, deadline)).to.be.revertedWith("time expired");
   }); 
 });
