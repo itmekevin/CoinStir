@@ -2,20 +2,8 @@
 DEPLOYMENT INSTRUCTIONS:
 
 1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
-2) Run: npx hardhat calc-enclave --network oasistest.
-3) Copy the calculated enclave address into the VerifyTypedData library for the verifyingContract variable and save. Deploy the updated library with a separate account.
-4) Copy the library deployed address into the enclave-deploy function below and save.
-5) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
-6) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
-
-
-TESTING INSTRUCTIONS:
-
-1) Create hardhat project, upload all 4 contracts, and use this file for hardhat.config.js.
-2) Set the verifyingContract variable equal to <address(0)>.
-3) Copy the library deployed address into the enclave-deploy function below and save.
-4) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
-5) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
+2) Run the following task with included params: npx hardhat deploy-enclave --network oasistest --host-network bsc
+3) Take the address of the newly deployed enclave contract, and pass as a param in the following function: npx hardhat deploy-host --network bsc --enclaveaddr <insert the enclave address here>
 */
 
 require("@nomicfoundation/hardhat-toolbox");
