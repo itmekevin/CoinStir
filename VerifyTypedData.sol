@@ -20,7 +20,7 @@ library VerifyTypedData {
 * When a user signs a txn they are creating a meta-txn which CoinStir enacts.
 */
 
-    function txnSigner(address recipiant, string memory value, bytes memory _signature, uint256 nonce)
+    function txnSigner(address recipiant, string memory value, bytes memory _signature, uint256 nonce, address _verifyingContract)
         public
         pure
         returns (address)
@@ -29,7 +29,7 @@ library VerifyTypedData {
         string memory name = "CoinStir";
         string memory version = "1";
         uint256 chainId = 23295;
-        address verifyingContract = address(0); // Use address(0) or specify the actual contract address.
+        address verifyingContract = _verifyingContract; // Use address(0) or specify the actual contract address.
 
         // stringified types
         string memory EIP712_DOMAIN_TYPE = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
@@ -96,7 +96,7 @@ library VerifyTypedData {
 * for compliance purposes.
 */
 
-  function getSigner(string memory note, uint256 deadline, bytes memory _signature)
+  function getSigner(string memory note, uint256 deadline, bytes memory _signature, address _verifyingContract)
     public
     pure
     returns (address)
@@ -105,7 +105,7 @@ library VerifyTypedData {
     string memory name = "CoinStir";
     string memory version = "1";
     uint256 chainId = 23295;
-    address verifyingContract = address(0); // Use address(0) or specify the actual contract address.
+    address verifyingContract = _verifyingContract; // Use address(0) or specify the actual contract address.
 
     // stringified types
     string memory EIP712_DOMAIN_TYPE = "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)";
