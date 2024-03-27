@@ -49,7 +49,7 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev placeholder for the address of the host counterpart of this contract.
 */
-    address public coinStir;
+    address public stirHost;
 
 /**
 * @dev placeholder for the wallet where funds will be sent to upon admin claiming fees.
@@ -158,7 +158,7 @@ contract StirEnclave is Enclave, accessControl {
 
 /**
 * @dev sets the address for the Host side of CoinStir, ensures correct chain, sets an endpoint, and assigns critical permissions and supporting addresses. 
-* @param stirHost only messages received from the entered address will be acted upon by this contract.
+* @param _stirHost only messages received from the entered address will be acted upon by this contract.
 * @notice the autoswitch functionality ensures the contract is on mainnet or testnet and is congruent with the settings of the Host contract.
 * @notice the address of the Host is stored for various logic below.
 * @notice adminStatus of a specified wallet is set, this address should be updated at the time of deploying.
@@ -166,9 +166,9 @@ contract StirEnclave is Enclave, accessControl {
 * @notice a feeWallet is set, providing a destination for fees accrued by the service to be sent. This address should be updated at the time of deploying.
 * @notice a gasWallet is set, providing a destination for gas fees accrued by the service to be sent. This address should be updated at the time of deploying.
 */
-    constructor(address stirHost) Enclave(stirHost, autoswitch("bsc")) {
+    constructor(address _stirHost) Enclave(_stirHost, autoswitch("bsc")) {
         registerEndpoint("trackDeposit", _trackDeposit);
-        coinStir = stirHost;
+        stirHost = _stirHost;
         adminStatus[msg.sender] = true; // UPDATE
         relayerStatus[0xF30CcB655090a190178D75bdFC8203eb826Ab066] = true; // UPDATE
         feeWallet = 0x0D78a2d04B925f50Ee233735b60C862357492D2d; // UPDATE
@@ -360,7 +360,7 @@ contract StirEnclave is Enclave, accessControl {
             txnNumber ++;
                 TXN storage t = TXNno[txnNumber];
                 t.blocknum = block.number;
-                t.recipiant = coinStir;
+                t.recipiant = stirHost;
                 t.sendingWallet = sender;
                 t.amount = payload;
                 t.fee = 0;
@@ -544,16 +544,16 @@ function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
 * @dev signature verification for all login/getter functions.
 * @param deadline ensures signature can be used only once for a given time period.
 */
-function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public pure returns (address) {
-    return VerifyTypedData.getSigner(note, deadline, _signature);
+function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public view returns (address) {
+    return VerifyTypedData.getSigner(note, deadline, _signature, address(this));
 }
 
 /**
 * @dev signature verification for all txn/approval functions.
 * @param nonce ensures signature can be used for only one transaction.
 */
-function txn712Lib(address recipiant, string memory value, bytes memory _signature, uint256 nonce) public pure returns (address) {
-    return VerifyTypedData.txnSigner(recipiant, value, _signature, nonce);
+function txn712Lib(address recipiant, string memory value, bytes memory _signature, uint256 nonce) public view returns (address) {
+    return VerifyTypedData.txnSigner(recipiant, value, _signature, nonce, address(this));
 }
 
 }
