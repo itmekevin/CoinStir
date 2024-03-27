@@ -101,7 +101,7 @@ task("deploy-enclave", "calculates host address and deploys enclave")
     const accounts = await ethers.getSigners();
     const StirEnclave = await ethers.getContractFactory('StirEnclave', {
         libraries: {
-        VerifyTypedData: "0xDFB2973D8274D768B0Ad15C127EA4fC40A14F9AA",
+        VerifyTypedData: "0xa6CDAB56cAc4Cd47Ca3875658334ca6c1Ad66062",
         },
     });
     let first = accounts[0].address;
