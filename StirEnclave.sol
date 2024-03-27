@@ -450,6 +450,7 @@ contract StirEnclave is Enclave, accessControl {
     function authGetTXNinfo(bytes memory signature, string memory _msg, address _addr, uint256 start, uint256 stop, uint256 deadline) external view returns (TXN[] memory) {
         address recoveredAddress = use712Lib(_msg, deadline, signature);
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
+        require(block.number <= (deadline + 600), "time expired");
             uint256 iterations = stop - start;
             address addr = originAddress[_addr];
                 TXN[] memory txnData = new TXN[](iterations);
@@ -472,6 +473,7 @@ contract StirEnclave is Enclave, accessControl {
     function authGetTxnList(bytes memory signature, string memory _msg, address _addr, uint256 deadline) external view returns (uint256) {
         address recoveredAddress = use712Lib(_msg, deadline, signature);
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
+        require(block.number <= (deadline + 600), "time expired");
         address addr = originAddress[_addr];
             return origintxns[addr].length;
     }
