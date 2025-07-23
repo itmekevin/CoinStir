@@ -1,7 +1,7 @@
 # CoinStir
 Overview:
 
-CoinStir is a privacy enabling app that allows users to send ETH or ERC20 tokens to other wallets without recipiants being able to see the senders address. Additionally CoinStir allows for a network of wallets to be created and managed from one dashboard to assist in managing personal or business finances. Financial privacy is instrumental in a multide of business and personal relationships, and while the open nature of the blockchain is often superior, there are instances in which privacy remains critical.
+CoinStir is a privacy enabling app that allows users to send ETH and, in the future, ERC20 tokens to other wallets without recipiants being able to see the senders address. Financial privacy is instrumental in a multide of business and personal relationships, and while the open nature of the blockchain is often superior, there are instances in which privacy remains critical.
 
 There are 2 halves to CoinStir that work together in order to achieve this:
 - The 'Host' contract which exists on Ethereum and handles the receipt and dispersement of funds - nothing else. While these events are public on the blockchain, the Host contract does not track any information whatsoever.
@@ -12,7 +12,7 @@ The Sapphire paratime is a privacy enabled blockchain with all computation and p
 
 Logic Flow:
 
-Funds are deposited into the Host contract by the user, which triggers a message to the Enclave contract including details of the transaction. The user can then interact with the relayer provided by the front end to create meta-txns that get submitted by the relayer, keeping the wallet that initiated the txn private. Additionally, users can approve additional wallets to both distribute and receive ETH on behalf of the original wallet. This allows for unique organizational structures of wallets, as well as the ability to privately receive funds all on the same dashboard.
+Funds are deposited into the Host contract by the user, which triggers a message to the Enclave contract including details of the transaction. The user can then interact with an on-chain relayer through the front end or directly to create meta-txns that get submitted by the relayer, keeping the wallet that initiated the txn private. Txns can be made in 2 different ways, internally and externally. Internal transactions are contained entirely within the CoinStir Enclave, and no funds are moved on ETH making them faster and cheaper. External transactions trigger funds to be distributed on Ethereum, meaning they will be directly accessible to the receiving wallet, though it will take slightly longer and be more gas intensive.
 
 Deposits:
 
@@ -25,9 +25,9 @@ A user creates a meta-txn that is passed to and executed by a relayer on Sapphir
 
 Withdraws:
 
-A user may initiate a withdraw in the same way a transaction is initiated, however the recipiant is themself. No 1% fee is charged on withdrawals, only gas used in the operation.
+A user may initiate a withdraw in the same way a transaction is initiated, however the recipiant is themself. No 1% fee is charged on withdrawals, only gas used in the operation. There is an emergency withdraw function built-in that bypasses the relayer entirely, compromising privacy but ensuring users are able to access their funds in the event of a relayer issue.
 
 Oversight:
 
-In an effort to prevent money laundering, there is the ability for oversight organizations to be granted access to review all history for any wallet. This grants the ability to "look behind the curtain" of the app for permissioned users such as governments or other regulatory agencies.
+In an effort to prevent money laundering, there is the ability for oversight organizations to be granted access to review all history for any wallet. This grants the ability to "look behind the curtain" of the app for permissioned users such as governments or other regulatory agencies. Wallets may also be blocked from creating transactions, though they can never be blocked from withdrawing their own funds.
 
