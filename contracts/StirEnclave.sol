@@ -39,12 +39,12 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev sets the gas price charged on deposits including celer message bridge fee.
 */
-    uint256 public depositGasPrice = 300000000000000;
+    uint256 public depositGasPrice = 200000000000000;
 
 /**
 * @dev sets the Celer message fee for messages originating on Sapphire.
 */
-    uint256 public celerFeeROSE;
+    uint256 public celerFeeROSE = 200000000000000;
 
 /**
 * @dev placeholder for the address of the host counterpart of this contract.
@@ -67,18 +67,6 @@ contract StirEnclave is Enclave, accessControl {
     address public relayer;
 
 /**
-* @notice metaddr structure. This is used in packaging of meta-txns related to address approvals and revocation of address approvals.
-* @param _walletB is the wallet that will have permission granted or revoked.
-* @param _signature is the signature generated from the front-end.
-* @param nonce ensures signature can be used only once for a given operation.
-*/
-    struct metaddr {
-        address _walletB;
-        bytes _signature;
-        uint256 nonce;
-    }
-
-/**
 * @notice metaTXN structure. This is used in packaging of meta-txns related to txns defined by users to send or receive funds.
 * @param _payload is the value in Ethere.
 * @param _dest is the destination wallet address.
@@ -95,7 +83,7 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @notice TXN structure. Every txn results in a TXN being created and includes all of the relevant information detailed below.
 * @param blocknum is the block number the txn got submitted in.
-* @param recipiant is the destination of the assets.
+* @param recipient is the destination of the assets.
 * @param sendingWallet is the wallet that initated the txn.
 * @param amount is the payload in ETH.
 * @param fee is the amount charged for the TXN by CoinStir, charged to the initiating account.
@@ -103,7 +91,7 @@ contract StirEnclave is Enclave, accessControl {
 */
     struct TXN {
         uint256 blocknum;
-        address recipiant;
+        address recipient;
         address sendingWallet;
         uint256 amount;
         uint256 fee;
@@ -111,19 +99,9 @@ contract StirEnclave is Enclave, accessControl {
     }
 
 /**
-* @dev maps the amount in Ether held by a speecific user.
+* @dev maps the amount in Ether held by a specific user.
 */
     mapping (address => uint256) private userBalance;
-
-/**
-* @dev maps any address to the original address that holds the ultimate permission for a given wallet.
-* @notice a wallet that has never interacted with CoinStir becomes its own originAddress. Any wallets that become linked via approvals to this originAddress get mapped back to that originAddress.
-* @notice when a wallet that is already mapped to an originAddress makes a deposit, the originAddress is credited with those funds even though.
-* The 'wallet B' that is tied to the originAddress has access to them unless approval is revoked by the originAddress.
-* @notice a wallet B cannot approve or revoke other wallets. Only an originAddress can do so for its own 'web' of wallets.
-* @notice multiple wallets can be tied back to a single originAddress creating a web of wallets that can be used as burners, ways to recieve funds without giving up a users originAddress, or organization purposes within the app.
-*/
-    mapping (address => address) private originAddress;
 
 /**
 * @dev maps the TXN struct to a number. This is how TXNs are organized. A given number references all of the data within that TXN struct.
@@ -131,30 +109,17 @@ contract StirEnclave is Enclave, accessControl {
     mapping (uint256 => TXN) private TXNno;
 
 /**
-* @dev maps an originAddress (described above) to an array of numbers corresponding to that addresses TXN structs. This lists out an originAddress's TXN's.
-* @notice regardless of if an originAddress or one of its approved wallets (wallet B's), the originAddress is credited with the TXN number.
-* @notice the wallet B's origintxns are irrelevant from a back-end perspective because the originAddress is always queried.
-* @notice the wallet B's origintxns can become relevant for organizational purposes in the front-end.
+* @dev maps the users wallet address to an array of numbers corresponding to that addresses TXN structs. This lists out an user's TXN's.
+* @notice any sending wallet ia credited with the txn number for future reference.
+* @notice any receiving wallet of an internalTxn also gets credited with a txn number to log the receipt of funds within CoinStir.
 */
-    mapping (address => uint256[]) private origintxns;
-
-/**
-* @dev maps one originAddress to any of its approved wallets (wallet B's).
-*/
-    mapping (address => address[]) private approvedAddress;
+    mapping (address => uint256[]) private userTxns;
 
 /**
 * @dev logic for blocking wallets deemed by regulatory agencies as 'high-risk'.
 * @notice even if on the blockedList, a wallet can always withdraw its own funds from CoinStir, even if blocked from sending funds to other accounts.
 */
     mapping (address => bool) public blockedList; 
-
-/**
-* @dev logic for approving a new account to access the funds of an origin address.
-* @notice the origin account must propose an address, and then the proposed address must also approve the origin address that proposed it. The 2 way approval prevents against abuse.
-*/
-
-    mapping (address => address) private proposedOrigin;
 
 /**
 * @dev sets the address for the Host side of CoinStir, ensures correct chain, sets an endpoint, and assigns critical permissions and supporting addresses. 
@@ -166,124 +131,17 @@ contract StirEnclave is Enclave, accessControl {
 * @notice a feeWallet is set, providing a destination for fees accrued by the service to be sent. This address should be updated at the time of deploying.
 * @notice a gasWallet is set, providing a destination for gas fees accrued by the service to be sent. This address should be updated at the time of deploying.
 */
-    constructor(address _stirHost) Enclave(_stirHost, autoswitch("bsc")) {
+    constructor(address _stirHost) Enclave(_stirHost, "bsc-testnet") {
         registerEndpoint("trackDeposit", _trackDeposit);
         stirHost = _stirHost;
-        adminStatus[msg.sender] = true; // UPDATE
-        relayerStatus[0xF30CcB655090a190178D75bdFC8203eb826Ab066] = true; // UPDATE
-        feeWallet = 0x0D78a2d04B925f50Ee233735b60C862357492D2d; // UPDATE
-        gasWallet = 0xF30CcB655090a190178D75bdFC8203eb826Ab066; //UPDATE
-    }
-
-
-////////////////////////////////////////////////// - WALLET APPROVALS - //////////////////////////////////////////////////
-
-/**
-* @dev creates a meta-txn in the correct format for approval of a wallet to be granted or revoked.
-* @param _metaddr includes the wallet B and signature data necessary to execute the granting or revocation of approval on the users behalf.
-* @notice _walletB is the address which approval is to be proposed, confirmed or revoked.
-* @notice _signature is the signature generated from the front-end.
-* @notice nonce ensures signature can be used only once for a given operation.
-* @return data in the proper format for the relayer to initate granting or revocation of approval for a specified wallet.
-*/
-    function createMetaTxnAddr(metaddr calldata _metaddr) external pure returns (bytes memory) {
-        return (abi.encode(
-            _metaddr._walletB,
-            _metaddr._signature,
-            _metaddr.nonce
-        ));
-    }
-
-/** @dev allows for an existing user to propose granting of access of the users funds to a new address. The proposed address must subsequently confirm this approval. This 2 step process is required as once a wallet has been
-* approved by another, any funds deposited by that wallet are accessible to the wallet that approved it.
-* @param signedMsg is the return data from 'createMetaTxnAddr'
-* @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
-* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
-* @notice nonce ensures signature can be used only once for a given operation.
-* @notice the proposing address must be an origin address
-* @notice the initiating address must have enough funds to cover the gas cost of this txn
-* @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
-*/
-    function proposeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address _walletB, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
-        address sender = txn712Lib(_walletB, value, signature, nonce);
-            require (sender == originAddress[sender], "must use origin address");
-            require (userBalance[sender] >= gasPrice, "insufficient balance");
-                if (originAddress[_walletB] == address(0)) {
-                    userBalance[sender] -= gasPrice;
-                    proposedOrigin[_walletB] = sender;
-                } else {
-                    revert("propose a different address");
-                }
-    }
-
-/**
-* @dev allows for an address to confirm the approval proposed by an origin address, thus making the address that successfully calls this function an approved address for the wallet that proposed the approval.
-* @param signedMsg is the return data from 'createMetaTxnAddr'
-* @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
-* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
-* @notice nonce ensures signature can be used only once for a given operation.
-* @notice the confirming address becomes an approved address of the proposing address, thus making any funds deposited by this confirming address accessible by the proposing address and vice versa.
-* @notice the original address that proposed this approval gets charged a second time upon confirmation of the approval, this is to prevent abuse of the relayers funds.
-* @notice this action does not become a recordable txn until the approval is confirmed, at which point a txn is added for the origin address.
-*/
-    function confirmApproval(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address origin, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
-        address sender = txn712Lib(origin, value, signature, nonce);
-                require (proposedOrigin[sender] == origin, "invalid address");
-                require (userBalance[origin] >= gasPrice, "insufficient balance");
-                require(nonce == origintxns[origin].length, "bad sig");
-                    userBalance[origin] -= gasPrice;
-                    approvedAddress[origin].push(sender);
-                    originAddress[sender] = origin;
-                    proposedOrigin[sender] = address(0);
-                    txnNumber ++;
-                        TXN storage t = TXNno[txnNumber];
-                        t.blocknum = block.number;
-                        t.recipiant = sender;
-                        t.sendingWallet = origin;
-                        t.availBal = userBalance[origin];
-                    origintxns[origin].push(txnNumber);
-                    reclaimGas += gasPrice;
-    }
-
-/**
-* @dev accepts info from the relayer to revoke approval of the address dictated by a user in the above meta-txn
-* @param signedMsg is the return data from 'createMetaTxnAddr'
-* @param value is always zero in this case, but allows access to the function 'txnSigner' which allows the sending wallet address to be derived and ensures a user can only implement this function on themselves.
-* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
-* @notice nonce ensures signature can be used only once for a given operation.
-* @notice users must have created the meta-txn with their originAddress to utilize this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
-* @notice users must have enough funds deposited into CoinStir to cover the gas fee for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
-*/
-    function revokeAddress(bytes memory signedMsg, string memory value, uint256 gasPrice) external onlyRelayer {
-        (address _walletB, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (address, bytes, uint256));
-        address sender = txn712Lib(_walletB, value, signature, nonce);
-                require (sender == originAddress[sender], "must use origin address");
-                require (userBalance[sender] >= gasPrice, "insufficient balance");
-                require(nonce == origintxns[sender].length, "bad sig");
-                    userBalance[sender] -= gasPrice;
-                    // DELETE SUBMITTED ADDRESS FROM APPROVAL LIST
-                            for (uint i = 0; i < approvedAddress[sender].length; i++) {
-                                if (approvedAddress[sender][i] == _walletB) {
-                                    approvedAddress[sender][i] = approvedAddress[sender][approvedAddress[sender].length - 1];
-                                    approvedAddress[sender].pop();
-                                    proposedOrigin[_walletB] = address(0);
-                                    originAddress[_walletB] = address(0);
-                                    break;
-                                }
-                            }
-                    txnNumber ++;
-                        TXN storage t = TXNno[txnNumber];
-                        t.blocknum = block.number;
-                        t.recipiant = _walletB;
-                        t.sendingWallet = sender;
-                        t.availBal = userBalance[sender];
-                    origintxns[sender].push(txnNumber);
-                    reclaimGas += gasPrice;
+        adminStatus[msg.sender] = true;
+        relayerStatus[0x365232724539ecc206B4E840e21102107BCB7133] = true;
+        feeWallet = 0x57a48723Bcb08B0C48dd42c531D9C4BbF50b373e;
+        gasWallet = 0x365232724539ecc206B4E840e21102107BCB7133;
     }
 
 ////////////////////////////////////////////////// - TRANSACTIONAL - //////////////////////////////////////////////////
+
 /**
 * @dev creates a meta-txn in the correct format for a txn to be created and executed by the relayer.
 * @param _metaTxn includes the payload, destination and signature data necessary to execute the txn.
@@ -300,6 +158,41 @@ contract StirEnclave is Enclave, accessControl {
     }
 
 /**
+* @dev accepts info from the relayer to verify if a proposed txn will succeed, provides failure reason if not. This is to prevent relayer abuse.
+* @param signedMsg is the return data from 'createMetaTxnAddr'
+* @param val is the value in Ether of the txn.
+* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @param feeRate is the amount charged by CoinStir for the services provided.
+* @param isInternal states if the txn being checked will incur Celer message fees or not.
+* @notice nonce ensures signature can be used only once for a given operation.
+* @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee + the fee rate) for this function. Front-end should run similar checks for quality of UX.
+* @notice if the sending wallet is on the blocked list AND they are attempting to send funds to a different wallet, an error will throw. Users can always withdraw their own funds, but may be prevented from creating txns.
+*/
+    function validateTrackTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate, bool isInternal) external view returns (bool success, string memory reason) {
+        (uint256 payload, address recipient, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
+            address sender = txn712Lib(recipient, val, signature, nonce);
+            if (blockedList[sender] == true && recipient != sender) {
+                return (false, "blocked sender");
+            } else {
+                if (nonce != userTxns[sender].length) {
+                    return (false, "bad sig");
+                }
+           uint256 fee = ((payload*feeRate)/1000);
+               if (recipient == sender) {
+                   fee = 0;
+               }
+            uint256 adjustedPayload = (payload + fee + gasPrice);
+                if (isInternal == false) {  // External transactions need celer fee
+                    adjustedPayload += celerFeeROSE;
+                }
+                    if (userBalance[sender] < adjustedPayload) {
+                        return (false, "insufficient funds");
+                    }
+                }
+            return (true, "");
+    }
+
+/**
 * @dev accepts info from the relayer to initiate a txn on behalf of the user.
 * @param signedMsg is the return data from 'createMetaTxnAddr'
 * @param val is the value in Ether of the txn.
@@ -310,32 +203,72 @@ contract StirEnclave is Enclave, accessControl {
 * @notice if the sending wallet is on the blocked list AND they are attempting to send funds to a different wallet, an error will throw. Users can always withdraw their own funds, but may be prevented from creating txns.
 */
     function _trackTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate) external payable onlyRelayer {
-        (uint256 payload, address recipiant, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
-            address sender = txn712Lib(recipiant, val, signature, nonce);
-            if (blockedList[sender] == true && recipiant != sender) {
+        (uint256 payload, address recipient, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
+            address sender = txn712Lib(recipient, val, signature, nonce);
+            if (blockedList[sender] == true && recipient != sender) {
                 revert("blocked sender");
             } else {
-                address _originAddr = originAddress[sender];
-                require(nonce == origintxns[_originAddr].length, "bad sig");
+                require(nonce == userTxns[sender].length, "bad sig");
                 uint256 fee = ((payload*feeRate)/1000);
-                    if (recipiant == _originAddr) {
+                    if (recipient == sender) {
                         fee = 0;
                     }
                     feeClaim += fee;
                 uint256 adjustedPayload = (payload + fee + gasPrice + celerFeeROSE);
-                require(userBalance[_originAddr] >= adjustedPayload, "insufficient funds");
-                    userBalance[_originAddr] -= adjustedPayload;
-                    txnNumber ++;
-                        TXN storage t = TXNno[txnNumber];
-                        t.blocknum = block.number;
-                        t.recipiant = recipiant;
-                        t.sendingWallet = sender;
-                        t.amount = payload;
-                        t.fee = fee;
-                        t.availBal = userBalance[_originAddr];
-                    origintxns[_originAddr].push(txnNumber);
+                require(userBalance[sender] >= adjustedPayload, "insufficient funds");
+                    userBalance[sender] -= adjustedPayload;
+                    record(sender, recipient, payload, fee, sender);
                     contractBalance -= payload;
-                    postMessage("executeTxn", abi.encode(recipiant, payload));
+                    postMessage("executeTxn", abi.encode(recipient, payload));
+                    reclaimGas += gasPrice;
+            }
+    }
+
+    /**
+* @dev Allows users to directly withdraw funds, bypassing the CoinStir relayer. This is not a private txn, but ensures users can always access their funds.
+* @param signedMsg is the return data from 'createMetaTxnAddr'
+* @param val is the value in Ether of the txn.
+* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @notice nonce ensures signature can be used only once for a given operation.
+* @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee) for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
+*/
+    function withdraw(bytes memory signedMsg, string memory val, uint256 gasPrice) external payable {
+        (uint256 payload, address recipient, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
+            address sender = txn712Lib(recipient, val, signature, nonce);
+                require(nonce == userTxns[sender].length, "bad sig");
+                uint256 adjustedPayload = (payload + gasPrice + celerFeeROSE);
+                require(userBalance[sender] >= adjustedPayload, "insufficient funds");
+                    userBalance[sender] -= adjustedPayload;
+                    record(sender, recipient, payload, 0, sender);
+                    contractBalance -= payload;
+                    postMessage("executeTxn", abi.encode(recipient, payload));
+                    reclaimGas += gasPrice;
+            }
+
+    /**
+* @dev Allows users to send funds between other users without actually settling on Ethereum. This type of txn only updates balances without transmitting funds on the L1 for additional privacy, time and gas savings.
+* @param signedMsg is the return data from 'createMetaTxnAddr'
+* @param val is the value in Ether of the txn.
+* @param gasPrice is the amount charged by CoinStir to actually execute the meta-txn the user signed. This prevents the user from needing to buy the $ROSE token, but still charges them for CoinStir's use of the token.
+* @param feeRate is the amount charged by CoinStir for the services provided.
+* @notice nonce ensures signature can be used only once for a given operation.
+* @notice users must have enough funds deposited into CoinStir to cover the (payload + gas fee) for this function. Checks exist in the front-end to prevent the signing of the meta-txn as well.
+*/
+    function internalTxn(bytes memory signedMsg, string memory val, uint256 gasPrice, uint256 feeRate) external onlyRelayer {
+        (uint256 payload, address recipient, bytes memory signature, uint256 nonce) = abi.decode(signedMsg, (uint256, address, bytes, uint256));
+            address sender = txn712Lib(recipient, val, signature, nonce);
+            if (blockedList[sender] == true && recipient != sender) {
+                revert("blocked sender");
+            } else {
+                require(nonce == userTxns[sender].length, "bad sig");
+                uint256 fee = ((payload*feeRate)/1000);
+                    feeClaim += fee;
+                uint256 adjustedPayload = (payload + fee + gasPrice);
+                require(userBalance[sender] >= adjustedPayload, "insufficient funds");
+                    userBalance[sender] -= adjustedPayload;
+                    record(sender, recipient, payload, fee, sender);
+                    userBalance[recipient] += payload;
+                    record(sender, recipient, payload, 0, recipient);
                     reclaimGas += gasPrice;
             }
     }
@@ -343,26 +276,34 @@ contract StirEnclave is Enclave, accessControl {
 /**
 * @dev accepts the deposit message from the Host contract and updates the users account information.
 * @param _args is the data included in the message created upon 'deposit' into the Host contract, and is delivered by the Celer IM Bridge.
-* @notice the sending wallet is checked for its originAddress, if there is none, its originAddress is set as itself. If one already exists, the txn is credited against its originAddress.
 * @return success if completed as expected, an indicator the Celer IM Bridge that the txn is complete.
 */
     function _trackDeposit(bytes calldata _args) internal returns (Result) {
         (address sender, uint256 payload) = abi.decode(_args, (address, uint256));
-        if (originAddress[sender] == address(0)) {
-            originAddress[sender] = sender;
-        }
-            address origin = originAddress[sender];
-            userBalance[origin] += (payload - depositGasPrice);
-            txnNumber ++;
-                TXN storage t = TXNno[txnNumber];
-                t.blocknum = block.number;
-                t.recipiant = stirHost;
-                t.sendingWallet = sender;
-                t.amount = payload;
-                t.availBal = userBalance[origin];
-            origintxns[origin].push(txnNumber);
+            userBalance[sender] += (payload - depositGasPrice);
+            record(sender, stirHost, payload, 0, sender);
             contractBalance += payload;
         return (Result.Success);
+    }
+
+/**
+* @dev Records the txn data.
+* @param sender is who is sending the funds.
+* @param recipient is who is recieving the funds.
+* @param payload is the value of the txn.
+* @param fee is the amount charged by CoinStir for the services provided.
+* @notice This is to simplify repeate operations.
+*/
+    function record(address sender, address recipient, uint256 payload, uint256 fee, address viewWallet) private {
+        txnNumber ++;
+            TXN storage t = TXNno[txnNumber];
+            t.blocknum = block.number;
+            t.recipient = recipient;
+            t.sendingWallet = sender;
+            t.amount = payload;
+            t.fee = fee;
+            t.availBal = userBalance[viewWallet];
+        userTxns[viewWallet].push(txnNumber);
     }
 
 ////////////////////////////////////////////////// - GETTERS - ///////////////////////////////////////////////////////////
@@ -380,11 +321,10 @@ contract StirEnclave is Enclave, accessControl {
     function recoverAddrTXNdata(bytes memory signedMsg, string memory _msg, uint256 deadline, uint256 start, uint256 stop) external view returns (TXN[] memory) {
         require(block.number <= (deadline + 600), "time expired");
         address recoveredAddress = use712Lib(_msg, deadline, signedMsg);
-        address _addr = originAddress[recoveredAddress];
             uint256 iterations = stop - start;
                 TXN[] memory txnData = new TXN[](iterations);
                 for (uint256 i = 0; i < iterations; i++) {
-                    uint256 current = origintxns[_addr][i + start];
+                    uint256 current = userTxns[recoveredAddress][i + start];
                     txnData[i] = getTxnData(current);
                 }
             return (txnData);
@@ -400,34 +340,18 @@ contract StirEnclave is Enclave, accessControl {
     }
 
 /**
-* @dev extracts a users address from a signed message and determines the number of txns they have made, the balance of its origin address, the number of approved wallets in its web, and the origin address itself.
+* @dev extracts a users address from a signed message and determines the number of txns they have made and its current balance.
 * @param signedMsg generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
 * @param _msg used for EIP712 spec and sender address derivation.
 * @param deadline ensures signature can be used only once for a given time period.
-* @return users address, their number of TXNs made, the balance of their origin account, the number of approved wallets and their origin address.
+* @return users address, their number of TXNs made and the balance of their account.
 */
-    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg, uint256 deadline) external view returns (address, uint256, uint256, uint256, address) {
+    function recoverAddressFromSignature(bytes memory signedMsg, string memory _msg, uint256 deadline) external view returns (address, uint256, uint256) {
         require(block.number <= (deadline + 600), "time expired");
         address recoveredAddress = use712Lib(_msg, deadline, signedMsg);
-            address _addr = originAddress[recoveredAddress];
-            uint256 txnCount = origintxns[_addr].length;
-            uint256 bal = userBalance[_addr];
-            uint256 numApproved = approvedAddress[_addr].length;
-        return (recoveredAddress, txnCount, bal, numApproved, _addr);
-    }
-
-/**
-* @dev gets a specific approved wallet for a users originAddress in a specific index slot.
-* @param signature generated from front-end and used to derive callers wallet address while preventing other addresses from retrieving information on accounts not their own.
-* @param _msg used for EIP712 spec and sender address derivation.
-* @param index is the slot number in the array of wallets to be returned.
-* @param deadline ensures signature can be used only once for a given time period.
-* @return wallet address in the specific slot number of approved wallets for the originAddress.
-*/
-    function getApprovedAddr(bytes memory signature, string memory _msg, uint256 index, uint256 deadline) public view returns (address) {
-        require(block.number <= (deadline + 600), "time expired");
-        address recoveredAddress = use712Lib(_msg, deadline, signature);
-            return approvedAddress[recoveredAddress][index];
+            uint256 txnCount = userTxns[recoveredAddress].length;
+            uint256 bal = userBalance[recoveredAddress];
+        return (recoveredAddress, txnCount, bal);
     }
 
 ////////////////////////////////////////////////// - AUTHORIZED ACCESS - ///////////////////////////////////////////////////////////
@@ -447,10 +371,9 @@ contract StirEnclave is Enclave, accessControl {
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
         require(block.number <= (deadline + 600), "time expired");
             uint256 iterations = stop - start;
-            address addr = originAddress[_addr];
                 TXN[] memory txnData = new TXN[](iterations);
                 for (uint256 i = 0; i < iterations; i++) {
-                    uint256 current = origintxns[addr][i + start];
+                    uint256 current = userTxns[_addr][i + start];
                     txnData[i] = getTxnData(current);
                 }
             return (txnData);
@@ -469,19 +392,10 @@ contract StirEnclave is Enclave, accessControl {
         address recoveredAddress = use712Lib(_msg, deadline, signature);
         require (authStatus[recoveredAddress] == true, "Invalid permissions");
         require(block.number <= (deadline + 600), "time expired");
-        address addr = originAddress[_addr];
-            return origintxns[addr].length;
+            return userTxns[_addr].length;
     }
 
 ////////////////////////////////////////////////// - OWNER CONTROLS - //////////////////////////////////////////////////
-
-/**
-* @dev sets the gas price on deposits to cover the celer message bridge cost.
-* @notice this does not add to the reclaimGas variable, as this value is spent on the message bridge, not collected by CoinStir.
-*/
-    function setDepositGasPrice(uint256 _depositGasPrice) external onlyAdmin {
-        depositGasPrice = _depositGasPrice;
-    }
 
 /**
 * @dev allows an admin to send the accrued gas fees to the specified wallet.
@@ -525,32 +439,25 @@ contract StirEnclave is Enclave, accessControl {
 * @dev add or remove wallet addresses from the blockedList.
 * @notice default is to NOT be on the blockedList.
 */
-function blockWallet(address[] calldata _badWallets) external onlyAdmin {
-    for (uint256 i = 0; i < _badWallets.length; i++) {
-        blockedList[_badWallets[i]] = !blockedList[_badWallets[i]];
-    }
-}
-/**
-* @dev update the Celer message fee in ROSE.
-*/
-function setCelerFeeROSE(uint256 _celerFeeROSE) external onlyAdmin {
-        celerFeeROSE = _celerFeeROSE;
+    function blockWallet(address[] calldata _badWallets) external onlyAdmin {
+        for (uint256 i = 0; i < _badWallets.length; i++) {
+            blockedList[_badWallets[i]] = !blockedList[_badWallets[i]];
+        }
     }
 
 /**
 * @dev signature verification for all login/getter functions.
 * @param deadline ensures signature can be used only once for a given time period.
 */
-function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public view returns (address) {
-    return VerifyTypedData.getSigner(note, deadline, _signature, address(this));
-}
+    function use712Lib(string memory note, uint256 deadline, bytes memory _signature) public view returns (address) {
+        return VerifyTypedData.getSigner(note, deadline, _signature, address(this));
+    }
 
 /**
 * @dev signature verification for all txn/approval functions.
 * @param nonce ensures signature can be used for only one transaction.
 */
-function txn712Lib(address recipiant, string memory value, bytes memory _signature, uint256 nonce) public view returns (address) {
-    return VerifyTypedData.txnSigner(recipiant, value, _signature, nonce, address(this));
-}
-
+    function txn712Lib(address recipient, string memory value, bytes memory _signature, uint256 nonce) public view returns (address) {
+        return VerifyTypedData.txnSigner(recipient, value, _signature, nonce, address(this));
+    }
 }
