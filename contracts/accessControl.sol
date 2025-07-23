@@ -26,13 +26,13 @@ contract accessControl {
     mapping(address => bool) public authStatus;
 
 /**
-* @notice only an Admin can flip relayer status, providing strict controls and preventing abuse.
-* @dev flips relayer status to the opposite of its current state for a given user. Care should be taken to ensure constant up-time of at least one relayer.
+* @notice only an Admin can add a relayer.
+* @dev adds a relayer. Relayers can only be added, and not removed, ensuring improvements are possible without removing access to a relayer altogether.
 * @param _relayer is the address of the relayer to flip the current status of.
 */
 
     function flipRelayer(address _relayer) external onlyAdmin returns (bool) {
-        relayerStatus[_relayer] = !relayerStatus[_relayer];
+        relayerStatus[_relayer] = true;
         return relayerStatus[_relayer];
     }
 
@@ -47,12 +47,10 @@ contract accessControl {
 
 /**
 * @notice only an Admin can flip AdminStatus, providing strict controls and preventing abuse.
-* @notice an admin cannot revoke its own adminStatus, ensuring there is always at least 1 admin.
 * @dev specifics of AdminStatus are detailed in above notes.
 * @param _admin is the address of the admin to flip the current status of.
 */
     function flipAdmin(address _admin) external onlyAdmin returns (bool) {
-        require (msg.sender != _admin, "cannot revoke own access");
         adminStatus[_admin] = !adminStatus[_admin];
         return adminStatus[_admin];
     }
