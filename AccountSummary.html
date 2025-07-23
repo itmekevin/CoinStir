@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinStir - Account Summary</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+</head>
+<body>
+    <!-- LOADING ANIMATION -->
+    <div class="loading-container">
+        <img src="./Assets/loading.gif" alt="Loading...">
+    </div>
+    
+    <!-- TRANSACTION POPUP -->
+    <div id="txnPopupBg" class="txnPopupBg">
+        <div class="txnPopupContainer"></div>
+    </div>
+    
+    <!-- PAGE BACKGROUND CONTAINER -->
+    <div class="page-background">
+        
+        <!-- WALLET CONNECTION -->
+        <button id="connectButton" class="walletbutton">LOGIN</button>
+        
+        <!-- HEADER NAVIGATION -->
+        <div class="headerMenu">
+            <a href="index.html" class="logoItem"></a>
+            <a href="deposit.html" class="depositItem">Deposit</a>
+            <a href="AccountSummary.html" class="accountSummaryItem">Account Summary</a>
+            <a href="faq.html" class="FAQItem">FAQ</a>
+            <a href="blog.html" class="blogItem">Blog</a>
+            <div id="accountSummaryTip" class="tipmark">?</div>
+        </div>
+        
+        <!-- ACCOUNT INFORMATION SECTION -->
+        <div class="heading-container">
+            <div class="text-container-left">
+                <span class="headerText" id="AccountDetails">Account Details</span>
+                <span class="detailText" id="originID">Connect your wallet to view account</span>
+                <span class="detailText" id="bal">ETH Balance: 0</span>
+                <span class="detailText" id="balusd">ETH value: $0.00</span>
+            </div>
+        </div>
+        
+        <!-- TAB NAVIGATION -->
+        <div class="tabContainer">
+            <div class="activetab" id="div1">Transact</div>
+            <div class="tab" id="div2">Withdraw</div>
+            
+            <!-- TRANSACTION TAB CONTENT -->
+            <div class="tabBody" id="txnTab">
+                <span class="headerText">Make a Transaction</span>
+                
+                <form class="toText" onsubmit="return false;">
+                    <label for="recipientField">To:</label>
+                    <input 
+                        type="text" 
+                        id="recipientField" 
+                        name="recipient"
+                        class="toEntry"
+                        placeholder="0x..."
+                        pattern="^0x[a-fA-F0-9]{40}$"
+                        title="Please enter a valid Ethereum address"
+                    >
+                </form>
+                
+                <form class="valueText" onsubmit="return false;">
+                    <label for="valueField">Value (ETH):</label>
+                    <input 
+                        type="text" 
+                        id="valueField" 
+                        name="value"
+                        class="valueEntry"
+                        placeholder="0.001"
+                        min="0.001"
+                        step="0.001"
+                    >
+                </form>
+                
+                <!-- INTERNAL TRANSACTION TOGGLE -->
+                <div class="toggle-container">
+                    <span class="internalFont" id="internalText">Internal</span>
+                    <label class="switch">
+                        <input type="checkbox" hidden>
+                        <div class="switch__wrapper">
+                            <div class="switch__toggle"></div>
+                        </div>
+                    </label>
+                </div>
+                
+                <button id="enclaveTxnButton" class="txnButton">Send Transaction</button>
+            </div>
+            
+            <!-- WITHDRAW TAB CONTENT -->
+            <div class="hidden" id="withdrawTab">
+                <span class="headerText">Withdraw Funds</span>
+                
+                <form class="withdrawText" onsubmit="return false;">
+                    <label for="withdrawValueField">Value (ETH):</label>
+                    <input 
+                        type="number" 
+                        id="withdrawValueField"
+                        name="value" 
+                        class="valueEntry"
+                        placeholder="0.001"
+                        min="0.001"
+                        step="0.001"
+                    >
+                </form>
+                
+                <button id="withdrawButton" class="withdrawButton">Withdraw</button>
+            </div>
+            
+            <!-- MANAGE TAB CONTENT (HIDDEN/FUTURE) -->
+            <div class="hidden" id="manageTab">
+                <span class="headerText">Approved Wallets</span>
+                <div id="listContainer" class="filldiv">
+                    <button id="revokeButton" class="revokeButton">Revoke</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TRANSACTION HISTORY TABLE -->
+        <div class="tableContainer">
+            <table class="table" id="container"></table>
+        </div>
+        
+    </div>
+    
+    <!-- JAVASCRIPT -->
+    <script type="module" src="./src/index.js"></script>
+</body>
+</html>

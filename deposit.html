@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoinStir - Deposit</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+</head>
+<body>
+    <!-- PAGE BACKGROUND CONTAINER -->
+    <div class="page-background">
+        
+        <!-- LOADING ANIMATION -->
+        <div class="loading-container">
+            <img src="./Assets/loading.gif" alt="Loading...">
+        </div>
+        
+        <!-- TRANSACTION POPUP -->
+        <div id="txnPopupBg" class="txnPopupBg">
+            <div class="txnPopupContainer"></div>
+        </div>
+        
+        <!-- HEADER NAVIGATION -->
+        <div class="headerMenu">
+            <a href="index.html" class="logoItem"></a>
+            <a href="deposit.html" class="depositItem">Deposit</a>
+            <a href="AccountSummary.html" class="accountSummaryItem">Account Summary</a>
+            <a href="faq.html" class="FAQItem">FAQ</a>
+            <a href="blog.html" class="blogItem">Blog</a>
+            <div id="depositTip" class="tipmark">?</div>
+        </div>
+        
+        <!-- WALLET CONNECTION -->
+        <button id="connectButton" class="walletbutton">LOGIN</button>
+        
+        <!-- ACCOUNT INFORMATION -->
+        <div class="text-container-info">
+            <span class="headerText" id="AccountDetails">Connect your wallet to get started</span>
+        </div>
+        
+        <!-- DEPOSIT SECTION -->
+        <div class="text-container-deposit">
+            <span class="headerText">Make a Deposit - BSC Testnet</span>
+            
+            <form class="depositForm" onsubmit="return false;">
+                <label for="depositField">Amount (ETH):</label>
+                <input 
+                    type="text" 
+                    id="depositField" 
+                    name="amount"
+                    class="fieldentry"
+                    placeholder="0.001"
+                    min="0.001"
+                    step="0.001"
+                >
+            </form>
+            
+            <button id="depositButton" class="depositButton">Deposit</button>
+        </div>
+        
+    </div>
+    
+    <!-- JAVASCRIPT -->
+    <script type="module" src="./Deposit.js"></script>
+</body>
+</html>

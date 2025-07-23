@@ -1,0 +1,42 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Website</title>
+</head>
+
+<body>
+    
+    <div class="page-background">
+        <div id="pageLabel" class="title" style="font-family:faster">CoinStir
+            <div id="sub" class="subtitle" >Control your assets and who can view them</div>
+            <button id="depositPage" class="pageButton">Deposit</button>
+            <button id="accountSummaryPage" class="pageButton">Account Summary</button>
+            <button id="faqPage" class="pageButton">FAQ</button>
+    </div>
+
+
+<script>
+
+    var depositButton = document.getElementById('depositPage');
+        depositButton.addEventListener("click", function() {
+            window.location.href = "deposit.html";
+    });
+
+    var summaryButton = document.getElementById('accountSummaryPage');
+        summaryButton.addEventListener("click", function() {
+            window.location.href = "AccountSummary.html";
+    });
+
+    var faqButton = document.getElementById('faqPage');
+        faqButton.addEventListener("click", function() {
+            window.location.href = "faq.html";
+    });
+</script>
+
+
+</body>
+</html>

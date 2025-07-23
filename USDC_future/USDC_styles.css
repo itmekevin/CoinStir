@@ -1,0 +1,761 @@
+.page-background {
+    background-image: url('CarbonScale.jpg');
+    background-size: cover;
+    height:100vh;
+}
+
+@font-face {
+  font-family: faster;
+  src: url('check3.ttf');
+}
+
+.loading-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    border: 3px, solid, #0000000;
+    border-radius:10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-container img {
+    width: 150px; 
+    height: 150px;
+    border-radius: 10px; /* match radius to above */
+}
+
+.faq-container{
+  position: absolute;
+  background: rgba(0, 0, 0, 0.95);
+  width:90%;
+  height:90%;
+  top:9%;
+  left:5%;
+  border: 3px solid #EDC6FF;
+  border-radius:15px;
+  box-shadow: 0px 0px 8px #000000;
+}
+
+.depositButton {
+  position: relative;
+  background: rgba(0, 0, 0, 0.95);
+  color:#EDC6FF;
+  font-size:18px;
+  width:60%;
+  height:40px;
+  border-radius:20px;
+  border-style: solid;
+  border-width: 2px;
+  border-color:#EDC6FF;
+  transition: border-radius, background-color, 0.2s ease, opacity 0.2s ease;
+  z-index:3;
+  margin-top:25%;
+  margin-left:20%;
+  }
+
+  .depositButton:hover {
+      color: #000000;
+      background-color: #C6FCED;
+      border-color: #C6FCED;
+      border-radius:5px;
+  }
+
+.footerArrows {
+  font-size: 8px;
+  color: #C6FCED;
+  cursor: pointer;
+}
+
+.footerRow {
+  font-size: 10px;
+  color: #C6FCED;
+}
+
+* {
+  margin: 10 auto;
+  box-sizing:border-box;
+  font-family: Roboto, sans-serif;
+}
+
+.pageButton {
+  position:absolute;
+  background: rgba(0, 0, 0, 0.95);
+  color:#EDC6FF;
+  font-size:18px;
+  width:12%;
+  height:50px;
+  border-radius:20px;
+  border-style: solid;
+  border-width: 2px;
+  border-color:#EDC6FF;
+  transition: border-radius, background-color, 0.2s ease, opacity 0.2s ease;
+  left:44%;
+}
+
+.pageButton:hover {
+  color: #000000;
+  background-color: #C6FCED;
+  border-color: #C6FCED;
+  border-radius:5px;
+}
+
+.title {
+  position:relative;
+  font-size:150px;
+  color: #EDC6FF;
+  text-align: center;
+  top:15vh;
+}
+
+.subtitle {
+  position:relative;
+  font-size:20px;
+  font-style:italic;
+  text-align: center;
+  color: #EDC6FF;
+  top:11vh;
+}
+
+.pageLabel {
+  font-size:40px;
+  color: #C6FCED;
+  font-style:italic;
+  border-bottom: 3px solid #C6FCED;
+}
+
+.tipmark{
+  font-size:8px;
+  color:#EDC6FF;
+  cursor:pointer;
+  height: 15px;
+  width: 15px;
+  border: 2px solid #EDC6FF;
+  border-radius:20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  position: relative;
+  top: -1%;
+  left: 31%;
+  z-index:5;
+}
+
+.tip {
+  width: 175px;
+  position: absolute;
+  font-size: 12px;
+  color: #C6FCED;
+  border: 2px solid #C6FCED;
+  border-radius: 5px;
+  padding: 2px;
+  background: rgba(0, 0, 0, 1);
+  top: 3%;
+  left: 15%;
+  padding: 10px;
+  z-index: 3;
+}
+
+.replaceButton {
+      font-family: roboto;
+      background-color: transparent;
+      color: #EDC6FF;
+      font-size: 8px;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      border-style: solid;
+      border-color: #EDC6FF;
+      transition: border-radius 0.2s  ease;
+    box-shadow: 0px 0px 8px #000000;
+
+  }
+.replaceButton:hover {
+      background-color: #EDC6FF;
+      border-color: #EDC6FF;
+      border-radius: 5px;
+      color: #000000;
+  }
+
+.revokeButton {
+  background: rgba(0, 0, 0, 0.85);
+  color:#EDC6FF;
+  font-size:18px;
+  width:14%;
+  height:60%;
+  border-radius:24px;
+  border-style: solid;
+  border-color:#EDC6FF;
+  transition: border-radius 0.2s  ease;
+  box-shadow: 0px 0px 8px #000000;
+  float:right;
+  margin-top: 4%;
+  margin-right: 8%;"
+  }
+
+  .revokeButton:hover {
+      background-color: #FCBF9D;
+      border-color: #FCBF9D;
+      border-radius: 5px;
+      color: #000000;
+  }
+
+.even {
+  background-color: #1E1E1E; /* Define your even background color */
+  width: 300%;
+  height:20%;
+  text-align:center;
+  border-radius: 3px;
+  transition: border-radius 0.3s, height 0.2s ease;
+  font-size:16px;
+}
+
+.odd {
+  background-color: #292929; /* Define your odd background color */
+  width: 300%;
+  height:20%;
+  text-align:center;
+  border-radius: 3px;
+  transition: border-radius 0.3s, height 0.2s ease;
+  font-size:16px;
+}
+
+.even:hover {
+  border: solid 2px #C6FCED;
+  border-radius: 1px;
+}
+
+.odd:hover {
+  border: solid 2px #C6FCED;
+  border-radius: 1px;
+}
+
+.active {
+  height: 20px;
+  padding:3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: solid 2px #EDC6FF;
+  border-radius: 2px;
+}
+
+.withdrawButton {
+  background: rgba(0, 0, 0, 0.85);
+  color:#EDC6FF;
+  font-size:18px;
+  width:14%;
+  height:60%;
+  border-radius:24px;
+  border-style: solid;
+  border-color:#EDC6FF;
+  transition: border-radius 0.2s  ease;
+  box-shadow: 0px 0px 8px #000000;
+  float:right;
+  margin-top: 4%;
+  margin-right: 8%;"
+
+}
+  .withdrawButton:hover {
+      background-color: #C6FCED;
+      border-color:#C6FCED;
+      border-radius: 5px;
+      color: #000000;
+  }
+
+.txnButton {
+  background: rgba(0, 0, 0, 0.85);
+  color:#EDC6FF;
+  font-size:18px;
+  width:14%;
+  height:60%;
+  border-radius:24px;
+  border-style: solid;
+  border-color:#EDC6FF;
+  transition: border-radius 0.2s  ease;
+  box-shadow: 0px 0px 8px #000000;
+  float:right;
+  margin-top: 4%;
+  margin-right: 8%;"
+
+  }
+  .txnButton:hover {
+  background-color: #C6FCED;
+  border-color:#C6FCED;
+  border-radius: 5px;
+  color: #000000;
+  }
+
+.fieldentry {
+  width: 30%;
+  height: 3%;
+  color: #000000;
+  font-size: 12px;
+  margin-left: 5px;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none;
+  z-index: 1;
+}
+
+
+
+.tabContainer {
+  display: flex;
+  text-align: center;
+  justify-content: center;
+}
+
+.tab {
+  background: rgba(0, 0, 0, 1);
+  width: 4%;
+  height: 5vh;
+  font-size: 14px;
+  color: #EDC6FF;
+  cursor: pointer;
+  margin: 1 5px;
+  padding: 5px 2px 2px 2px; 
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  border: 2px solid #EDC6FF;
+  border-bottom: 0px;
+  z-index: 2;
+  padding-bottom: 1px;
+}
+
+.activetab {
+  background: rgba(0, 0, 0, 1);
+  width: 4%;
+  height: 5vh;
+  font-size: 14px;
+  color: #EDC6FF;
+  cursor: pointer;
+  margin: 1 5px; /* Adjust the margin to add space between the divs */
+  padding: 5px 2px 2px 2px; 
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  border: solid #EDC6FF;
+  z-index: 2;
+  border-bottom: 0px;
+
+}
+
+.tabBody {
+  background: rgba(0, 0, 0, 0.95);
+  color: #EDC6FF;
+  font-size: 12px;
+  border: 2px solid #EDC6FF;
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+  border-bottom-left-radius: 15px;
+  width: 37%;
+  height:18vh;
+  box-shadow: 0px 0px 8px #000000;
+  margin-top:5vh;
+  margin-right:3%;
+  margin-left:-12%;
+}
+
+.tableContainer {
+  display:flex;
+  justify-content: center;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 37%;
+  font-size: 12px;
+  font-family:roboto;
+  color:#EDC6FF;
+  box-shadow: 0px 0px 8px #000000;
+  white-space: nowrap;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-left:-3%;
+  margin-top: 2%;
+}
+
+
+.table td, th {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #000000;
+}
+
+.hoverable:hover {
+  cursor: pointer;
+    color: #C6FCED;
+}
+
+/* CSS styles for the first row */
+table tr:first-child {
+  font-size:16px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.95);
+  font-family:roboto;
+}
+
+
+
+/* Selects every other row starting with the second row */
+tr:nth-child(odd) {
+        background: rgba(0, 0, 0, 0.95);
+}
+
+/* Selects every other row starting with the first row */
+tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.95);
+}
+
+.walletbutton {
+  background: rgba(0, 0, 0, 0.95);
+  color:#EDC6FF;
+  font-size:18px;
+  width:12%;
+  height:50px;
+  border-radius:20px;
+  border-style: solid;
+  border-width: 2px;
+  border-color:#EDC6FF;
+  transition: border-radius, background-color, 0.2s ease, opacity 0.2s ease;
+  z-index:3;
+  }
+
+  .walletbutton:hover {
+      color: #000000;
+      background-color: #C6FCED;
+      border-color: #C6FCED;
+      border-radius:5px;
+  }
+
+.approveButton {
+  margin-top:33%;
+  margin-left:12.5%;
+  background: rgba(0, 0, 0, 0.95);
+  color:#EDC6FF;
+  font-size:18px;
+  width:75%;
+  height:20%;
+  border-radius:20px;
+  border-style: solid;
+  border-width: 2px;
+  border-color:#EDC6FF;
+  transition: border-radius, background-color, 0.2s ease, opacity 0.2s ease;
+  position:absolute;
+  }
+
+  .approveButton:hover {
+      color: #000000;
+      background-color: #C6FCED;
+      border-color: #C6FCED;
+      border-radius:5px;
+  }
+
+  p {
+      font-family:roboto;
+      color:#080808;
+      font-size:22px;
+      font-style:italic;
+      width:100%;
+}
+
+
+.balance-reference {
+  color: #D1D1D1;
+    font-family:roboto;
+}
+
+.heading-container{
+  display:flex;
+  justify-content: center;
+  margin-top:5%;
+  margin-bottom:2%;
+}
+
+.text-container-deposit {
+  position: relative;
+  margin-right:3%;
+  width:26%;
+  height:20vh;
+  font-family:roboto;
+  font-size:12px;
+  background: rgba(0, 0, 0, 0.95);
+  color: #EDC6FF;
+  border: 3px solid #EDC6FF;
+  border-radius:15px;
+  box-shadow: 0px 0px 8px #000000;
+  left:37%;
+  top:15%;
+}
+
+.text-container-left, .text-container-right {
+  position: relative;
+  margin-right:3%;
+  width:17%;
+  height:20vh;
+  font-family:roboto;
+  font-size:12px;
+  background: rgba(0, 0, 0, 0.95);
+  color: #EDC6FF;
+  border: 3px solid #EDC6FF;
+  border-radius:15px;
+  box-shadow: 0px 0px 8px #000000;
+}
+
+.subtext {
+  position:absolute;
+  color: #EDC6FF;
+  font-size:12px;
+  display: block;
+  z-index:1;
+  margin-top: 10px;
+  margin-left:20px;
+}
+
+.headerText {
+  position:absolute;
+  z-index:1;
+  margin-left:12px;
+  color: #EDC6FF;
+  font-size:24px;
+  font-weight:bold;
+  display: block;
+  margin-top: 8px;
+}
+
+.text2 {
+  color: #EDC6FF;
+  font-size:6px;
+  display: block;
+  margin-bottom: 15px;
+}
+
+
+.small {
+  font-size:6px;
+}
+
+  p {
+      font-family:roboto;
+      color:#080808;
+      font-size:11px;
+      font-style:italic;
+      width:100%;
+}
+
+.note {
+  text-align:center;
+}
+
+.depositinput {
+    font-size:8px;
+  width:125px;
+    height:10px;
+}
+
+.addressinput {
+  width:80%;
+  height:12%;
+  font-size:12px;
+  position: absolute;
+  margin-top:18%;
+  margin-left:10%;
+}
+
+.popup {
+  position: absolute;
+  font-size:12px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #C6FCED;
+  border-radius: 5px;
+  padding: 3px;
+  display: none;
+  color: #C6FCED;
+}
+
+.centered {
+  position: relative;
+}
+
+.centered:hover .popup {
+  display: block;
+  left: 50%;
+  top: -15%;
+  transform: translate(-50%, -50%);
+}
+
+.chainSelector {
+  box-shadow: 0px 0px 4px #000000;
+  font-size:8px;
+  padding: 3px;
+  border-radius: 5px;
+  font-family:roboto;
+  color:#313131;
+  background-color:#D1D1D1;
+}
+
+.chainSelector:hover {
+  color:#DADADA;
+  background-color:#898989;
+}
+
+body
+{
+  margin: 0;
+  padding: 0;
+  
+  /* make it look decent enough */
+  background: #232323;
+  color: #cdcdcd;
+  font-family: "Avenir Next", "Avenir", sans-serif;
+}
+
+#menuToggle
+{
+  display: block;
+  position: relative;
+  top: 3.5vh;
+  left: 2%;
+  
+  z-index: 1;
+  
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#menuToggle a
+{
+  text-decoration: none;
+  color: #C6FCED;
+  
+  transition: color 0.3s ease;
+}
+
+#menuToggle a:hover
+{
+  color: #EDC6FF;
+}
+
+
+#menuToggle input
+{
+  display: block;
+  width: 40px;
+  height: 32px;
+  position: absolute;
+  top: -7px;
+  left: -5px;
+  
+  cursor: pointer;
+  
+  opacity: 0; /* hide this */
+  z-index: 2; /* and place it over the hamburger */
+  
+  -webkit-touch-callout: none;
+}
+
+/*
+ * Just a quick hamburger
+ */
+#menuToggle span
+{
+  display: block;
+  width: 33px;
+  height: 4px;
+  margin-bottom: 5px;
+  position: relative;
+  
+  background: #C6FCED;
+  border-radius: 3px;
+  
+  z-index: 1;
+  
+  transform-origin: 4px 0px;
+  
+  transition: transform 0.5s cubic-bezier(0.77,0.2,0.05,1.0),
+              background 0.5s cubic-bezier(0.77,0.2,0.05,1.0),
+              opacity 0.55s ease;
+}
+
+#menuToggle span:first-child
+{
+  transform-origin: 0% 0%;
+}
+
+#menuToggle span:nth-last-child(2)
+{
+  transform-origin: 0% 100%;
+}
+
+/* 
+ * Transform all the slices of hamburger
+ * into a crossmark.
+ */
+#menuToggle input:checked ~ span
+{
+  opacity: 1;
+  transform: rotate(45deg) translate(-2px, -1px);
+  background: #C6FCED;
+}
+
+/*
+ * But let's hide the middle one.
+ */
+#menuToggle input:checked ~ span:nth-last-child(3)
+{
+  opacity: 0;
+  transform: rotate(0deg) scale(0.2, 0.2);
+}
+
+/*
+ * Ohyeah and the last one should go the other direction
+ */
+#menuToggle input:checked ~ span:nth-last-child(2)
+{
+  transform: rotate(-45deg) translate(0, -1px);
+}
+
+/*
+ * Make this absolute positioned
+ * at the top left of the screen
+ */
+#menu
+{
+  position: absolute;
+  width: 300px;
+  margin: -100px 0 0 -50px;
+  padding: 50px;
+  padding-top: 125px;
+  
+  background: #000000;
+  list-style-type: none;
+  -webkit-font-smoothing: antialiased;
+  /* to stop flickering of text in safari */
+  
+  transform-origin: 0% 0%;
+  transform: translate(-100%, 0);
+  
+  transition: transform 0.5s cubic-bezier(0.77,0.2,0.05,1.0);
+}
+
+#menu li
+{
+  padding: 10px 0;
+  font-size: 22px;
+}
+
+/*
+ * And let's slide it in from the left
+ */
+#menuToggle input:checked ~ ul
+{
+  transform: none;
+}

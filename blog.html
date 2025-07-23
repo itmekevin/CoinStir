@@ -1,0 +1,190 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ</title>
+</head>
+
+<body>
+<div class="page-background">
+
+     <div class="headerMenu">
+            <a href="index.html" class="logoItem"></a>
+            <a href="deposit.html" class="depositItem">Deposit</a>
+            <a href="accountSummary.html" class="accountSummaryItem">Account Summary</a>
+            <a href="faq.html" class="FAQItem">FAQ</a>
+            <a href="blog.html" class="blogItem">Blog</a>
+    </div>
+
+<button  class="blogPost" id="blogButton1">
+    <div class="blog-circle"><span class="blog-date"></span></div>
+    <span class="blogHeadline">Your favorite privacy protocol is LARPing.</span>
+    <span class="blogHook" id="content">The illusion of privacy within blockchain is just that, a common misconception. The blockchain provides detailed information surrounding all of your transactions, and it doesn’t take...</span>
+</button>
+<!--
+<button  class="blogPost" id="blogButton2">
+    <div class="blog-circle"><span class="blog-date">4/29/24</span></div>
+</button>
+
+<button  class="blogPost" id="blogButton3">
+    <div class="blog-circle"><span class="blog-date">4/15/24</span></div>
+</button>
+-->
+
+
+
+</div>
+
+<script>
+
+    function checkDeviceType() {
+    if (window.innerWidth <= 1100) {
+        // Mobile or tablet device
+        return "mobile";
+    } else {
+        // Desktop device
+        return "desktop";
+    }
+}
+    var hook = "The illusion of privacy within blockchain is just that, a common misconception. The blockchain provides detailed information surrounding all of your transactions, and it doesn’t take...";
+    var fulltext = "The illusion of privacy within blockchain is just that, a common misconception. The blockchain provides detailed information surrounding all of your transactions, and it doesn’t take significant heavy-lifting to tie a seemingly anonymous wallet to a KYC’d user from an exchange or other on/off ramp from fiat to crypto.<br><br>When protocols boast your transactions being completely anonymous with them, they are operating under the false pretense that money moves you make within crypto won’t be tracked back to those you make in the fiat system. Additionally, by complicating the process for law enforcement to track individual wallet moves, protocols leave themselves open to harsh litigation unfolding across the space in real time.<br><br>Privacy is critical. In business and personal relationships, privacy is a cornerstone of the free market. Conversely, hiding moves from the government is not sound business practice. When it comes to crypto protocols offering enhanced privacy, it is imperative to seek those that offer privacy in business and social context, while not being misconstrued by oversight organizations to be shielding their users from tax or legal analysis.<br><br>Hiding users account balances, current and past transactions, clarity for oversight organizations. CoinStir checks all of these boxes. Enjoy seamless privacy within Ethereum (and in the future other L1’s?) without needing to understand the mechanics enabling the protocol. Simply deposit and transact, let CoinStir flawlessly execute the rest - all while providing the user a concise record of their transactions. Perfect for business and perfect for personal finances. See what it feels like to move on Ethereum in private.";
+
+    var content = document.getElementById("content");
+    var blogButton1 = document.getElementById('blogButton1');
+    blogButton1.addEventListener("click", function() {
+        var blogPost = document.getElementById('blogButton1');
+        if (checkDeviceType() === "mobile") {
+        var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 80 + "vw";
+        blogPost.style.left = 10 + "vw";
+        blogPost.style.height = 25 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+                setTimeout(function() {
+            content.innerHTML = hook;
+            content.style.width = 60 + "vw";
+            content.style.fontSize = 2.5 + "vw";
+            }, 50);
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 90 + "vw";
+        blogPost.style.left = 5 + "vw";
+        blogPost.style.height = 130 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+                setTimeout(function() {
+            content.innerHTML = fulltext;
+            content.style.width = 68 + "vw";
+            content.style.fontSize = 2.5 + "vw";
+            }, 250);
+    }
+} else {
+            var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 50 + "vw";
+        blogPost.style.left = 25 + "vw";
+        blogPost.style.height = 12 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+                setTimeout(function() {
+            content.innerHTML = hook;
+            content.style.width = 40 + "vw";
+            content.style.fontSize = 1 + "vw";
+            }, 10);
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 70 + "vw";
+        blogPost.style.left = 15 + "vw";
+        blogPost.style.height = 40 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+        setTimeout(function() {
+            content.innerHTML = fulltext;
+            content.style.width = 55 + "vw";
+            content.style.fontSize = 1 + "vw";
+            }, 300);
+    }
+}
+});
+/*
+        var blogButton2 = document.getElementById('blogButton2');
+    blogButton2.addEventListener("click", function() {
+        var blogPost = document.getElementById('blogButton2');
+if (checkDeviceType() === "mobile") {
+        var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 80 + "vw";
+        blogPost.style.left = 10 + "vw";
+        blogPost.style.height = 25 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 90 + "vw";
+        blogPost.style.left = 5 + "vw";
+        blogPost.style.height = 120 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+    }
+} else {
+            var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 50 + "vw";
+        blogPost.style.left = 25 + "vw";
+        blogPost.style.height = 12 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 90 + "vw";
+        blogPost.style.left = 5 + "vw";
+        blogPost.style.height = 40 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+    }
+}
+});
+
+        var blogButton3 = document.getElementById('blogButton3');
+    blogButton3.addEventListener("click", function() {
+        var blogPost = document.getElementById('blogButton3');
+if (checkDeviceType() === "mobile") {
+        var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 80 + "vw";
+        blogPost.style.left = 10 + "vw";
+        blogPost.style.height = 25 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 90 + "vw";
+        blogPost.style.left = 5 + "vw";
+        blogPost.style.height = 120 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+    }
+} else {
+            var isExpanded = blogPost.getAttribute('data-expanded') === 'true';
+    if (isExpanded) {
+        // If expanded, reset to original size
+        blogPost.style.width = 50 + "vw";
+        blogPost.style.left = 25 + "vw";
+        blogPost.style.height = 12 + "vw";
+        blogPost.setAttribute('data-expanded', 'false');
+    } else {
+        // If not expanded, expand it
+        blogPost.style.width = 90 + "vw";
+        blogPost.style.left = 5 + "vw";
+        blogPost.style.height = 40 + "vw";
+        blogPost.setAttribute('data-expanded', 'true');
+    }
+}
+});*/
+
+</script>
+
+
+
+
+</body>
+</html>
