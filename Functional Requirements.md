@@ -97,3 +97,14 @@ The Enclave Contract is much more robust than the Host Contract, and includes th
         - Allows for the blocking of specific wallet addresses in the event a regulatory agency or government deems a specific wallet to be laundering money or in some other way outside the law.
         - For use by admin Only (see onlyAdmin modifier).
         - Blocked wallets can still deposit/withdraw, but they cannot under any circumstances complete an actual transfer of funds. This ensures CoinStir does not have the ability to sieze any users funds, but the ability to send private transactions can be revoked.
+     
+  16) 'Withdraw'
+        - Enables withdrawing funds directly, bypassing relayer.
+        - This is a failsafe to ensure users may always access funds, even in the event of relayer disruption
+          
+  17) 'internalTxn'
+        - Allows for transacting of funds between wallets, without the funds actually settling on Ethereum.
+        - Faster and less expensive. Good for moving funds between CoinStir users who are interested in maintaining a balance within CoinStir for regular use.
+          
+  18) 'validateTrackTxn'
+        - Gasless relayer helper function. Ensures a transaction will succeed prior to the gasless relayer passing a transaction through on behalf of a user. This prevents griefing of the relayer, and prevents users from maliciously draining its funds, since the only time the gasless relayer will spend gas is when it is executing a function on behalf of a paying user who has the funds to cover its cost.
